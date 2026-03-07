@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
-import { getActiveProfile } from './config.js';
+import { getActiveProfile } from '../core/config.js';
 
 interface GistFile {
     content: string;

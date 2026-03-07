@@ -2,8 +2,8 @@ import fs from 'fs-extra';
 import path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
-import { getActiveProfile } from './config.js';
-import { generateContent } from './ai.js';
+import { getActiveProfile } from '../core/config.js';
+import { generateContent } from '../core/ai.js';
 
 export async function runCompress(projectPath: string = process.cwd()) {
     const profile = await getActiveProfile();

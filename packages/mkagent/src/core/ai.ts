@@ -2,9 +2,9 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { MkagentConfig } from './config.js';
-import { agentsTemplate } from './templates/agents.js';
-import { claudeTemplate } from './templates/claude.js';
-import { geminiTemplate } from './templates/gemini.js';
+import { agentsTemplate } from '../templates/agents.js';
+import { claudeTemplate } from '../templates/claude.js';
+import { geminiTemplate } from '../templates/gemini.js';
 import { ProjectIntelligence } from './detect.js';
 
 export interface PromptContext {
