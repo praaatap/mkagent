@@ -8,19 +8,17 @@ import { MkagentConfig } from './config.js';
 
 import { ProjectIntelligence } from './detect.js';
 
+import { ProjectOptions } from './prompts.js';
+
 export async function orchestrateGeneration(
     config: MkagentConfig,
     targetFolder: string,
-    projectName: string,
-    projectType: string,
-    description: string,
-    commands: string,
-    forbidden: string,
-    agents: string[],
+    options: ProjectOptions,
     intelligence: ProjectIntelligence,
     dryRun: boolean = false
 ) {
-    const context: PromptContext = { projectName, projectType, description, commands, forbidden, intelligence };
+    const { folderName, projectType, description, commands, forbidden, agents } = options;
+    const context: PromptContext = { ...options, intelligence };
 
     const spinner = ora(`⚡ Generating agents with ${config.defaultModel}...`).start();
 
@@ -48,7 +46,7 @@ export async function orchestrateGeneration(
         const resReadme = await generateContent(config, 'README.md', context);
         if (!dryRun) {
             await fs.ensureDir(targetFolder);
-            await fs.writeFile(path.join(targetFolder, 'README.md'), resReadme.success ? resReadme.content : `# ${projectName}\n\n${description}`);
+            await fs.writeFile(path.join(targetFolder, 'README.md'), resReadme.success ? resReadme.content : `# ${folderName}\n\n${description}`);
         } else {
             spinner.succeed(chalk.cyan(`[DRY RUN] Generated README.md:`));
             console.log(chalk.dim(resReadme.content));
@@ -58,7 +56,7 @@ export async function orchestrateGeneration(
 
         if (!dryRun) {
             spinner.start('Scaffolding folder structure...');
-            await scaffoldProject(targetFolder, projectName);
+            await scaffoldProject(targetFolder, options);
             spinner.succeed(chalk.green('Project structure scaffolded successfully.'));
         }
 

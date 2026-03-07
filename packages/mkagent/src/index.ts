@@ -59,37 +59,32 @@ program
             config = await getConfig(); // reload
         }
 
-        // Fallback if config is still null somehow
         if (!config) return cancel('Configuration missing. Aborting.');
 
-        const intelligence = await detectStack();
-        const answers = await runInitPrompt();
-        if (!answers || !answers.folderName) return;
+        const projectOptions = await runInitPrompt();
+        if (!projectOptions) return;
 
-        const targetDir = path.join(process.cwd(), answers.folderName);
+        const targetDir = path.join(process.cwd(), projectOptions.folderName);
 
         if (await fs.pathExists(targetDir) && !options.dryRun) {
             const override = await confirm({
-                message: `Folder ${answers.folderName} already exists. Continue anyway?`,
+                message: `Folder ${projectOptions.folderName} already exists. Continue anyway?`,
                 initialValue: false
             });
             if (isCancel(override)) return cancel('Operation cancelled.');
         }
 
+        const intelligence = await detectStack();
+
         await orchestrateGeneration(
             config,
             targetDir,
-            answers.folderName,
-            answers.projectType,
-            answers.description,
-            answers.commands,
-            answers.forbidden,
-            answers.agents,
+            projectOptions,
             intelligence,
             options.dryRun
         );
 
-        outro(chalk.green(`Project ${answers.folderName} scaffolded successfully!`));
+        outro(chalk.green(`Project ${projectOptions.folderName} scaffolded successfully!`));
     });
 
 program
@@ -143,16 +138,9 @@ program
             return cancel('Invalid configuration. Run `npx mkagent config` first.');
         }
 
-        const pkgJsonPath = path.join(process.cwd(), 'package.json');
-        let projectName = path.basename(process.cwd());
-        if (await fs.pathExists(pkgJsonPath)) {
-            const pkg = await fs.readJson(pkgJsonPath);
-            if (pkg.name) projectName = pkg.name;
-        }
-
         const intelligence = await detectStack();
         const context: PromptContext = {
-            projectName: intelligence.name,
+            folderName: intelligence.name,
             projectType: intelligence.stack,
             description: intelligence.description || 'Regenerated from existing project context',
             commands: intelligence.configFiles.join(', '),

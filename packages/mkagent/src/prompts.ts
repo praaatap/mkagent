@@ -43,7 +43,24 @@ export async function runConfigPrompt() {
     return currentConfig;
 }
 
-export async function runInitPrompt() {
+export interface ProjectOptions {
+    folderName: string;
+    projectType: string;
+    description: string;
+    commands: string;
+    forbidden: string;
+    agents: string[];
+    // Advanced Next.js Options
+    useAppRouter?: boolean;
+    useTailwind?: boolean;
+    useSrcDir?: boolean;
+    importAlias?: string;
+    // Agent Persona Options
+    technicalLevel?: 'Senior' | 'Expert' | 'Architect';
+    focusArea?: 'Performance' | 'Security' | 'Testing' | 'Fullstack';
+}
+
+export async function runInitPrompt(): Promise<ProjectOptions | void> {
     const folderName = await text({
         message: 'What is your project folder name?',
         placeholder: 'my-app',
@@ -54,8 +71,8 @@ export async function runInitPrompt() {
     const projectType = await select({
         message: 'What type of project?',
         options: [
-            { value: 'Next.js', label: 'Next.js' },
-            { value: 'React', label: 'React' },
+            { value: 'Next.js', label: 'Next.js (Recommended)' },
+            { value: 'React', label: 'React (Vite)' },
             { value: 'Node.js API', label: 'Node.js API' },
             { value: 'Python', label: 'Python' },
             { value: 'Monorepo', label: 'Monorepo' },
@@ -64,34 +81,73 @@ export async function runInitPrompt() {
     });
     if (isCancel(projectType)) return cancel('Operation cancelled');
 
+    let advancedOptions: any = {};
+    if (projectType === 'Next.js') {
+        const useAppRouter = await confirm({
+            message: 'Use App Router? (Recommended)',
+            initialValue: true
+        });
+        if (isCancel(useAppRouter)) return cancel('Operation cancelled');
+
+        const useTailwind = await confirm({
+            message: 'Include Tailwind CSS?',
+            initialValue: true
+        });
+        if (isCancel(useTailwind)) return cancel('Operation cancelled');
+
+        const useSrcDir = await confirm({
+            message: 'Use `src/` directory?',
+            initialValue: true
+        });
+        if (isCancel(useSrcDir)) return cancel('Operation cancelled');
+
+        const importAlias = await text({
+            message: 'Configure import alias?',
+            placeholder: '@/*',
+            defaultValue: '@/*'
+        });
+        if (isCancel(importAlias)) return cancel('Operation cancelled');
+
+        advancedOptions = { useAppRouter, useTailwind, useSrcDir, importAlias };
+    }
+
     const description = await text({
         message: 'Short description of your project?',
-        placeholder: 'A modern web application'
+        placeholder: 'A premium AI-agent ready project'
     });
     if (isCancel(description)) return cancel('Operation cancelled');
 
-    const commands = await text({
-        message: 'Main commands? (dev, build, test)',
-        placeholder: 'npm run dev, npm run build',
-        defaultValue: 'npm run dev, npm run build'
+    const technicalLevel = await select({
+        message: 'Agent Technical Level?',
+        options: [
+            { value: 'Senior', label: 'Senior Engineer' },
+            { value: 'Expert', label: 'Expert Developer' },
+            { value: 'Architect', label: 'System Architect' }
+        ],
+        initialValue: 'Expert'
     });
-    if (isCancel(commands)) return cancel('Operation cancelled');
+    if (isCancel(technicalLevel)) return cancel('Operation cancelled');
 
-    const forbidden = await text({
-        message: 'Any folders AI should never touch?',
-        placeholder: 'dist, .env, .next, node_modules',
-        defaultValue: 'dist, .env, .next, node_modules'
+    const focusArea = await select({
+        message: 'Agent Focus Area?',
+        options: [
+            { value: 'Fullstack', label: 'Balanced Fullstack' },
+            { value: 'Performance', label: 'High Performance' },
+            { value: 'Security', label: 'Security & Hardening' },
+            { value: 'Testing', label: 'Test-Driven Development' }
+        ],
+        initialValue: 'Fullstack'
     });
-    if (isCancel(forbidden)) return cancel('Operation cancelled');
+    if (isCancel(focusArea)) return cancel('Operation cancelled');
 
     const agents = await multiselect({
         message: 'Which agent files to generate?',
         options: [
-            { value: 'AGENTS.md', label: 'AGENTS.md' },
-            { value: 'CLAUDE.md', label: 'CLAUDE.md' },
-            { value: 'GEMINI.md', label: 'GEMINI.md' }
+            { value: 'AGENTS.md', label: 'AGENTS.md (Coordination)' },
+            { value: 'CLAUDE.md', label: 'CLAUDE.md (Dev Rules)' },
+            { value: 'MEMORY.md', label: 'MEMORY.md (Context)' }
         ],
-        initialValues: ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md']
+        initialValues: ['AGENTS.md', 'CLAUDE.md', 'MEMORY.md']
     });
     if (isCancel(agents)) return cancel('Operation cancelled');
 
@@ -99,8 +155,11 @@ export async function runInitPrompt() {
         folderName: folderName as string,
         projectType: projectType as string,
         description: description as string,
-        commands: commands as string,
-        forbidden: forbidden as string,
-        agents: agents as string[]
+        commands: projectType === 'Next.js' ? 'npm run dev' : 'npm start',
+        forbidden: 'dist, .env, .next, node_modules',
+        agents: agents as string[],
+        ...advancedOptions,
+        technicalLevel: technicalLevel as any,
+        focusArea: focusArea as any
     };
 }

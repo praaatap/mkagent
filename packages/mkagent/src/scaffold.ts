@@ -1,36 +1,65 @@
 import fs from 'fs-extra';
 import path from 'path';
+import { ProjectOptions } from './prompts.js';
 
-export async function scaffoldProject(folderPath: string, projectName: string) {
+export async function scaffoldProject(folderPath: string, options: ProjectOptions) {
+    const { folderName, useAppRouter, useTailwind, useSrcDir, importAlias } = options;
+
     // Create base folder
     await fs.ensureDir(folderPath);
 
+    const baseDir = useSrcDir ? 'src' : '';
+    const appOrPages = useAppRouter ? 'app' : 'pages';
+    const contentDir = path.join(baseDir, appOrPages);
+
     // Folders
     const dirsToCreate = [
-        'src/app',
-        'src/components',
-        'src/lib',
+        contentDir,
+        path.join(baseDir, 'components'),
+        path.join(baseDir, 'lib'),
         'public'
-    ];
+    ].filter(Boolean);
 
     for (const dir of dirsToCreate) {
         await fs.ensureDir(path.join(folderPath, dir));
-        // add .gitkeep to empty folders except app which will have files
-        if (dir !== 'src/app') {
-            await fs.writeFile(path.join(folderPath, dir, '.gitkeep'), '');
-        }
+        await fs.writeFile(path.join(folderPath, dir, '.gitkeep'), '');
     }
 
-    // src/app files
-    await fs.writeFile(path.join(folderPath, 'src/app/page.tsx'), 'export default function Page() { return <div>Hello World</div>; }\n');
-    await fs.writeFile(path.join(folderPath, 'src/app/layout.tsx'), 'export default function Layout({ children }: { children: React.ReactNode }) { return (<html><body>{children}</body></html>); }\n');
-    await fs.writeFile(path.join(folderPath, 'src/app/globals.css'), '/* Tailwind or global CSS */\n');
+    // Default Files
+    if (useAppRouter) {
+        await fs.writeFile(path.join(folderPath, contentDir, 'page.tsx'), 'export default function Page() { return <main className="flex min-h-screen flex-col items-center justify-between p-24"><h1>Welcome to mkagent</h1></main>; }\n');
+        await fs.writeFile(path.join(folderPath, contentDir, 'layout.tsx'), 'export default function RootLayout({ children }: { children: React.ReactNode }) { return (<html lang="en"><body>{children}</body></html>); }\n');
+        await fs.writeFile(path.join(folderPath, contentDir, 'globals.css'), useTailwind ? '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' : '/* Global CSS */\n');
+    } else {
+        await fs.writeFile(path.join(folderPath, contentDir, 'index.tsx'), 'export default function Home() { return <div>Welcome to mkagent (Pages Router)</div>; }\n');
+        await fs.writeFile(path.join(folderPath, contentDir, '_app.tsx'), 'import type { AppProps } from "next/app";\n export default function App({ Component, pageProps }: AppProps) { return <Component {...pageProps} />; }\n');
+    }
 
-    // Root files
+    if (useTailwind) {
+        const tailwindConfig = `import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./${useSrcDir ? 'src/' : ''}pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./${useSrcDir ? 'src/' : ''}components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./${useSrcDir ? 'src/' : ''}app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+export default config;
+`;
+        await fs.writeFile(path.join(folderPath, 'tailwind.config.ts'), tailwindConfig);
+        await fs.writeFile(path.join(folderPath, 'postcss.config.js'), 'module.exports = { plugins: { tailwindcss: {}, autoprefixer: {}, }, };\n');
+    }
+
+    // package.json
     const pkgJson = {
-        name: projectName,
+        name: options.folderName,
         version: "1.0.0",
-        description: "A premium AI-agent ready project scaffolded with mkagent.",
+        description: options.description || "A premium AI-agent ready project scaffolded with mkagent.",
         private: true,
         scripts: {
             dev: "next dev",
@@ -43,11 +72,13 @@ export async function scaffoldProject(folderPath: string, projectName: string) {
             "react": "^18.2.0",
             "react-dom": "^18.2.0",
             "lucide-react": "^0.344.0",
-            "framer-motion": "^11.0.8"
+            "framer-motion": "^11.0.8",
+            ...(useTailwind ? { "tailwindcss": "^3.4.1", "postcss": "^8.4.35", "autoprefixer": "^10.4.17" } : {})
         }
     };
     await fs.writeJson(path.join(folderPath, 'package.json'), pkgJson, { spaces: 2 });
 
+    // tsconfig.json
     const tsconfig = {
         "compilerOptions": {
             "target": "es5",
@@ -65,22 +96,13 @@ export async function scaffoldProject(folderPath: string, projectName: string) {
             "jsx": "preserve",
             "incremental": true,
             "plugins": [{ "name": "next" }],
-            "paths": { "@/*": ["./src/*"] }
+            "paths": { [importAlias || "@/*"]: ["./src/*"] }
         },
         "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
         "exclude": ["node_modules"]
     };
     await fs.writeJson(path.join(folderPath, 'tsconfig.json'), tsconfig, { spaces: 2 });
 
-    const gitignore = `
-node_modules
-.next
-out
-build
-.env
-.env.local
-.DS_Store
-`;
-    await fs.writeFile(path.join(folderPath, '.gitignore'), gitignore.trim() + '\\n');
-    await fs.writeFile(path.join(folderPath, '.env.example'), '# Example env\\n');
+    await fs.writeFile(path.join(folderPath, '.gitignore'), 'node_modules\n.next\nout\nbuild\n.env\n.env.local\n.DS_Store\n');
+    await fs.writeFile(path.join(folderPath, '.env.example'), '# AI Agent Keys Example\nNEXT_PUBLIC_AI_ENABLE=true\n');
 }

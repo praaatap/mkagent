@@ -8,22 +8,26 @@ import { geminiTemplate } from './templates/gemini.js';
 import { ProjectIntelligence } from './detect.js';
 
 export interface PromptContext {
-    projectName: string;
+    folderName: string;
     projectType: string;
     description: string;
     commands: string;
     forbidden: string;
     intelligence?: ProjectIntelligence;
+    technicalLevel?: string;
+    focusArea?: string;
+    useAppRouter?: boolean;
+    useTailwind?: boolean;
 }
 
 function getFallback(filename: string, context: PromptContext): string {
     if (filename === 'CLAUDE.md') {
-        return claudeTemplate(context.projectName, context.projectType, context.description, context.commands, context.forbidden);
+        return claudeTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
     }
     if (filename === 'GEMINI.md') {
-        return geminiTemplate(context.projectName, context.projectType, context.description, context.commands, context.forbidden);
+        return geminiTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
     }
-    return agentsTemplate(context.projectName, context.projectType, context.description, context.commands, context.forbidden);
+    return agentsTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
 }
 
 export async function generateContent(
@@ -49,20 +53,28 @@ Deep Project Intelligence:
 - Dependencies: ${Object.keys(context.intelligence.dependencies).slice(0, 20).join(', ')} (truncated)
 ` : '';
 
-    const prompt = `You are a world-class AI agent engineer. Your task is to generate a deeply technical, non-generic ${filename} file for a ${context.projectType} project named "${context.projectName}".
+    const personaSnippet = `
+Agent Persona:
+- Technical Level: ${context.technicalLevel || 'Expert'}
+- Primary Focus: ${context.focusArea || 'Fullstack'}
+`;
+
+    const prompt = `You are a world-class ${context.technicalLevel || 'Expert'} AI agent engineer. Your task is to generate a deeply technical, non-generic ${filename} file for a ${context.projectType} project named "${context.folderName}".
 
 Project Context:
 - Description: ${context.description}
 - Key Commands: ${context.commands}
 - Restricted/Forbidden Folders: ${context.forbidden}
 ${intelligenceSnippet}
+${personaSnippet}
 
 Requirements for the content:
 1. DO NOT use generic boilerplate. 
 2. Use clean, professional, human-like English that is highly optimized for LLM parsing.
 3. STRICTLY NO EMOJIS in the output.
-4. Analyze the project type and description to provide specific rules for the AI agent (e.g., if it's Next.js, talk about App Router vs Pages Router, Server Components handling, etc.).
-5. The file MUST include these specific sections:
+4. Analyze the project type and description to provide specific rules for the AI agent.
+5. Focus heavily on ${context.focusArea || 'Fullstack'} aspects in the "Agent Personality and Instructions" section.
+6. The file MUST include these specific sections:
    ## Project Intelligence
    ## Tech Stack and Architecture 
    ## Core Workflows (Commands)
@@ -70,7 +82,7 @@ Requirements for the content:
    ## Guardrails and Safety
    ## Agent Personality and Instructions
 
-Output ONLY the raw markdown content. Do not include markdown code block backticks.` ;
+Output ONLY the raw markdown content. Do not include markdown code block backticks.`;
 
 
     try {
