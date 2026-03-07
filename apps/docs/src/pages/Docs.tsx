@@ -2,24 +2,8 @@ import React from 'react'
 
 const Docs: React.FC = () => {
     return (
-        <div className="py-20 px-6 max-w-7xl mx-auto flex gap-12">
-            <aside className="w-64 hidden lg:block sticky top-32 h-fit">
-                <h4 className="text-xs font-bold text-white/30 uppercase tracking-widest mb-6">Introduction</h4>
-                <nav className="flex flex-col gap-4 text-sm font-medium">
-                    <a href="#getting-started" className="text-[#00f5ff] no-underline">Getting Started</a>
-                    <a href="#configuration" className="text-white/50 hover:text-white transition-colors no-underline">Configuration</a>
-                    <a href="#usage" className="text-white/50 hover:text-white transition-colors no-underline">Core Usage</a>
-                </nav>
-
-                <h4 className="text-xs font-bold text-white/30 uppercase tracking-widest mt-12 mb-6">Features</h4>
-                <nav className="flex flex-col gap-4 text-sm font-medium">
-                    <a href="#" className="text-white/50 hover:text-white transition-colors no-underline">AI Reasoning</a>
-                    <a href="#" className="text-white/50 hover:text-white transition-colors no-underline">Next.js Scaffolding</a>
-                    <a href="#" className="text-white/50 hover:text-white transition-colors no-underline">Custom Templates</a>
-                </nav>
-            </aside>
-
-            <div className="flex-1 max-w-3xl">
+        <div className="py-20 max-w-4xl mx-auto flex gap-12">
+            <div className="flex-1">
                 <section id="getting-started" className="mb-20">
                     <h2 className="text-4xl font-black mb-8 tracking-tighter">Getting Started</h2>
                     <p className="text-lg text-white/60 mb-8 leading-relaxed">

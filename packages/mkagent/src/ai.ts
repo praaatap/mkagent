@@ -5,6 +5,7 @@ import { MkagentConfig } from './config.js';
 import { agentsTemplate } from './templates/agents.js';
 import { claudeTemplate } from './templates/claude.js';
 import { geminiTemplate } from './templates/gemini.js';
+import { ProjectIntelligence } from './detect.js';
 
 export interface PromptContext {
     projectName: string;
@@ -12,6 +13,7 @@ export interface PromptContext {
     description: string;
     commands: string;
     forbidden: string;
+    intelligence?: ProjectIntelligence;
 }
 
 function getFallback(filename: string, context: PromptContext): string {
@@ -36,12 +38,24 @@ export async function generateContent(
         return { success: false, content: getFallback(filename, context), error: `Invalid API key for ${model}` };
     }
 
+    const intelligenceSnippet = context.intelligence ? `
+Deep Project Intelligence:
+- TypeScript: ${context.intelligence.hasTypeScript}
+- Tailwind CSS: ${context.intelligence.hasTailwind}
+- ESLint: ${context.intelligence.hasESLint}
+- Prettier: ${context.intelligence.hasPrettier}
+- Config Files Detected: ${context.intelligence.configFiles.join(', ')}
+- Is Monorepo: ${context.intelligence.isMonorepo}
+- Dependencies: ${Object.keys(context.intelligence.dependencies).slice(0, 20).join(', ')} (truncated)
+` : '';
+
     const prompt = `You are a world-class AI agent engineer. Your task is to generate a deeply technical, non-generic ${filename} file for a ${context.projectType} project named "${context.projectName}".
 
 Project Context:
 - Description: ${context.description}
 - Key Commands: ${context.commands}
 - Restricted/Forbidden Folders: ${context.forbidden}
+${intelligenceSnippet}
 
 Requirements for the content:
 1. DO NOT use generic boilerplate. 

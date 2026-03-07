@@ -30,16 +30,20 @@ export async function scaffoldProject(folderPath: string, projectName: string) {
     const pkgJson = {
         name: projectName,
         version: "1.0.0",
+        description: "A premium AI-agent ready project scaffolded with mkagent.",
         private: true,
         scripts: {
             dev: "next dev",
             build: "next build",
-            start: "next start"
+            start: "next start",
+            lint: "next lint"
         },
         dependencies: {
-            "next": "^14.0.0",
+            "next": "^14.1.0",
             "react": "^18.2.0",
-            "react-dom": "^18.2.0"
+            "react-dom": "^18.2.0",
+            "lucide-react": "^0.344.0",
+            "framer-motion": "^11.0.8"
         }
     };
     await fs.writeJson(path.join(folderPath, 'package.json'), pkgJson, { spaces: 2 });

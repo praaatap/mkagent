@@ -8,6 +8,7 @@ import { getConfig, maskKey } from './config.js';
 import { runConfigPrompt, runInitPrompt } from './prompts.js';
 import { orchestrateGeneration } from './generate.js';
 import { generateContent, PromptContext } from './ai.js';
+import { detectStack, ProjectIntelligence } from './detect.js';
 import ora from 'ora';
 
 const program = new Command();
@@ -61,6 +62,7 @@ program
         // Fallback if config is still null somehow
         if (!config) return cancel('Configuration missing. Aborting.');
 
+        const intelligence = await detectStack();
         const answers = await runInitPrompt();
         if (!answers || !answers.folderName) return;
 
@@ -83,10 +85,50 @@ program
             answers.commands,
             answers.forbidden,
             answers.agents,
+            intelligence,
             options.dryRun
         );
 
         outro(chalk.green(`Project ${answers.folderName} scaffolded successfully!`));
+    });
+
+program
+    .command('doctor')
+    .description('Check the health of your mkagent environment')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent doctor ')));
+        const spinner = ora('Checking configuration...').start();
+
+        try {
+            const config = await getConfig();
+            if (!config) {
+                spinner.fail(chalk.red('No configuration file found. Run `mkagent config` to set up.'));
+            } else {
+                spinner.succeed(chalk.green('Configuration file found.'));
+
+                const model = config.defaultModel;
+                const key = config.keys[model];
+
+                if (key) {
+                    spinner.succeed(chalk.green(`API Key for ${model} is present: ${maskKey(key)}`));
+                } else {
+                    spinner.fail(chalk.red(`API Key for ${model} is missing!`));
+                }
+            }
+
+            const intelligence = await detectStack();
+            console.log(chalk.cyan('\nProject Intelligence:'));
+            console.log(`- Detected Stack: ${chalk.bold(intelligence.stack)}`);
+            console.log(`- TypeScript: ${intelligence.hasTypeScript ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- Tailwind: ${intelligence.hasTailwind ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- ESLint: ${intelligence.hasESLint ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- Monorepo: ${intelligence.isMonorepo ? chalk.green('Yes') : chalk.dim('No')}`);
+
+            outro(chalk.green('\nHealth check complete. You are ready to go!'));
+        } catch (err: any) {
+            spinner.fail(chalk.red(`Doctor failed: ${err.message}`));
+            outro(chalk.red('Please fix the errors above.'));
+        }
     });
 
 program
@@ -108,12 +150,14 @@ program
             if (pkg.name) projectName = pkg.name;
         }
 
+        const intelligence = await detectStack();
         const context: PromptContext = {
-            projectName,
-            projectType: 'Monorepo/App', // Simplification for regeneration step
-            description: 'Regenerated from existing folder',
-            commands: 'npm run dev',
-            forbidden: 'dist, .env, node_modules'
+            projectName: intelligence.name,
+            projectType: intelligence.stack,
+            description: intelligence.description || 'Regenerated from existing project context',
+            commands: intelligence.configFiles.join(', '),
+            forbidden: 'dist, .env, node_modules',
+            intelligence
         };
 
         const agentsToGen = [];

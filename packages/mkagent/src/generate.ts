@@ -6,6 +6,8 @@ import { generateContent, PromptContext } from './ai.js';
 import { scaffoldProject } from './scaffold.js';
 import { MkagentConfig } from './config.js';
 
+import { ProjectIntelligence } from './detect.js';
+
 export async function orchestrateGeneration(
     config: MkagentConfig,
     targetFolder: string,
@@ -15,9 +17,10 @@ export async function orchestrateGeneration(
     commands: string,
     forbidden: string,
     agents: string[],
+    intelligence: ProjectIntelligence,
     dryRun: boolean = false
 ) {
-    const context: PromptContext = { projectName, projectType, description, commands, forbidden };
+    const context: PromptContext = { projectName, projectType, description, commands, forbidden, intelligence };
 
     const spinner = ora(`⚡ Generating agents with ${config.defaultModel}...`).start();
 

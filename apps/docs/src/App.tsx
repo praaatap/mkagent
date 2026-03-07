@@ -5,6 +5,9 @@ import Home from './pages/Home'
 import Terminal from './pages/Terminal'
 import Docs from './pages/Docs'
 
+import APIReference from './pages/APIReference'
+import BestPractices from './pages/BestPractices'
+
 function App() {
   return (
     <BrowserRouter>
@@ -12,7 +15,12 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="terminal" element={<Terminal />} />
-          <Route path="docs" element={<Docs />} />
+          <Route path="docs">
+            <Route index element={<Docs />} />
+            <Route path="api" element={<APIReference />} />
+            <Route path="best-practices" element={<BestPractices />} />
+            <Route path="*" element={<Docs />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
