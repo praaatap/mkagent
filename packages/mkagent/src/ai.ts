@@ -18,6 +18,7 @@ export interface PromptContext {
     focusArea?: string;
     useAppRouter?: boolean;
     useTailwind?: boolean;
+    overridePrompt?: string;
 }
 
 function getFallback(filename: string, context: PromptContext): string {
@@ -30,16 +31,20 @@ function getFallback(filename: string, context: PromptContext): string {
     return agentsTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
 }
 
+import { ProfileConfig } from './config.js';
+
 export async function generateContent(
-    config: MkagentConfig,
+    profile: ProfileConfig,
     filename: string,
     context: PromptContext
 ): Promise<{ success: boolean; content: string; error?: string }> {
-    const model = config.defaultModel;
-    const apiKey = config.keys[model];
+    const model = profile.defaultModel;
+    const primaryKey = profile.keys[model];
+    const backupKey = profile.backupKeys?.[model];
+    const params = profile.modelParams?.[model] || {};
 
-    if (!apiKey) {
-        return { success: false, content: getFallback(filename, context), error: `Invalid API key for ${model}` };
+    if (!primaryKey && !backupKey) {
+        return { success: false, content: getFallback(filename, context), error: `No API keys found for ${model}` };
     }
 
     const intelligenceSnippet = context.intelligence ? `
@@ -59,7 +64,7 @@ Agent Persona:
 - Primary Focus: ${context.focusArea || 'Fullstack'}
 `;
 
-    const prompt = `You are a world-class ${context.technicalLevel || 'Expert'} AI agent engineer. Your task is to generate a deeply technical, non-generic ${filename} file for a ${context.projectType} project named "${context.folderName}".
+    const prompt = context.overridePrompt || `You are a world-class ${context.technicalLevel || 'Expert'} AI agent engineer. Your task is to generate a deeply technical, non-generic ${filename} file for a ${context.projectType} project named "${context.folderName}".
 
 Project Context:
 - Description: ${context.description}
@@ -74,7 +79,8 @@ Requirements for the content:
 3. STRICTLY NO EMOJIS in the output.
 4. Analyze the project type and description to provide specific rules for the AI agent.
 5. Focus heavily on ${context.focusArea || 'Fullstack'} aspects in the "Agent Personality and Instructions" section.
-6. The file MUST include these specific sections:
+6. If the file is ${filename === '.cursorrules' ? 'Cursor IDE rules' : filename}, adapt the format accordingly (e.g. JSON-like or structured markdown).
+7. The file MUST include these specific sections:
    ## Project Intelligence
    ## Tech Stack and Architecture 
    ## Core Workflows (Commands)
@@ -82,37 +88,87 @@ Requirements for the content:
    ## Guardrails and Safety
    ## Agent Personality and Instructions
 
-Output ONLY the raw markdown content. Do not include markdown code block backticks.`;
+Output ONLY the raw content. Do not include markdown code block backticks unless they are part of the file content.`;
 
-
-    try {
-        let content = '';
-
+    async function attemptGeneration(apiKey: string): Promise<string> {
         if (model === 'openai') {
             const openai = new OpenAI({ apiKey });
             const completion = await openai.chat.completions.create({
                 messages: [{ role: 'system', content: prompt }],
                 model: 'gpt-4o',
+                temperature: params.temperature ?? 0.7,
+                max_tokens: params.maxTokens ?? 2000
             });
-            content = completion.choices[0].message.content || '';
+            return completion.choices[0].message.content || '';
         } else if (model === 'anthropic') {
             const anthropic = new Anthropic({ apiKey });
             const msg = await anthropic.messages.create({
                 model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 2000,
+                max_tokens: params.maxTokens ?? 2000,
+                temperature: params.temperature ?? 0.7,
                 messages: [{ role: 'user', content: prompt }]
             });
-            content = msg.content.map(b => 'text' in b ? b.text : '').join('');
+            return msg.content.map(b => 'text' in b ? b.text : '').join('');
         } else if (model === 'gemini') {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const geminiModel = genAI.getGenerativeModel({
+                model: 'gemini-2.0-flash',
+                generationConfig: {
+                    temperature: params.temperature ?? 0.7,
+                    maxOutputTokens: params.maxTokens ?? 2048
+                }
+            });
             const result = await geminiModel.generateContent(prompt);
             const response = await result.response;
-            content = response.text();
+            return response.text();
+        }
+        throw new Error('Unsupported model');
+    }
+
+    try {
+        let content = '';
+        if (primaryKey) {
+            try {
+                content = await attemptGeneration(primaryKey);
+            } catch (primaryErr) {
+                if (backupKey) {
+                    content = await attemptGeneration(backupKey);
+                } else {
+                    throw primaryErr;
+                }
+            }
+        } else if (backupKey) {
+            content = await attemptGeneration(backupKey);
         }
 
         return { success: true, content };
     } catch (err: any) {
         return { success: false, content: getFallback(filename, context), error: err.message || 'Unknown error during API call' };
     }
+}
+
+export async function verifyKey(model: 'openai' | 'anthropic' | 'gemini', apiKey: string): Promise<boolean> {
+    try {
+        if (model === 'openai') {
+            const openai = new OpenAI({ apiKey });
+            await openai.models.list();
+            return true;
+        } else if (model === 'anthropic') {
+            const anthropic = new Anthropic({ apiKey });
+            await anthropic.messages.create({
+                model: 'claude-3-5-sonnet-20241022',
+                max_tokens: 1,
+                messages: [{ role: 'user', content: 'hi' }]
+            });
+            return true;
+        } else if (model === 'gemini') {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            await geminiModel.generateContent('hi');
+            return true;
+        }
+    } catch (e) {
+        return false;
+    }
+    return false;
 }

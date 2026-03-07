@@ -1,0 +1,48 @@
+# mkagent CLI - Technical Specifications & Features
+
+mkagent is a premium, intelligence-first CLI tool designed to bridge the gap between human intent and AI agent execution by providing deep project context and structural blueprints.
+
+## Core Philosophical Principles
+- **Intelligence-First**: Does not just scaffold blindly; it scans and understands the project DNA.
+- **Agent-Ready**: Generates high-fidelity documentation specifically optimized for LLM consumption.
+- **Zero-Emoji Policy**: All content is strictly technical and professional, ensuring maximum token efficiency and clarity for AI.
+- **Premium UX**: Highly interactive, terminal-based project wizard inspired by "Claude Code".
+
+## Key Features
+
+### 1. Advanced Project Initialization (`mkagent init`)
+- **Multi-Step Wizard**: A granular, interactive flow for setting up new projects.
+- **Next.js Deep Scaffolding**: 
+  - Choice of App Router vs Pages Router.
+  - Optional Tailwind CSS integration.
+  - `src/` directory toggle.
+  - Customizable import aliases (e.g., `@/*`).
+- **Agent Persona Engine**: 
+  - Set Agent Technical Level: Senior, Expert, or System Architect.
+  - Set Agent Focus Area: Performance, Security, Testing, or Balanced Fullstack.
+
+### 2. Deep Project Intelligence Engine
+- **Structural Scan**: Automatically detects frameworks (Next.js, Vite/React), TypeScript, Tailwind CSS, ESLint, Prettier, and Monorepo status.
+- **Context Injection**: Scanned metadata is injected into AI prompts to ensure generated agent files are technically accurate and context-aware.
+
+### 3. AI-Powered Blueprint Generation
+- **Supported Providers**: OpenAI (GPT-4o), Anthropic (Claude 3.5 Sonnet), and Google (Gemini 2.0 Flash).
+- **Core Agent Files**:
+  - `CLAUDE.md`: Technical development instructions and rules for agents.
+  - `AGENTS.md`: Coordination and strategy for multi-agent workflows.
+  - `MEMORY.md`: Persistent project context and architectural decision logs.
+- **README Generation**: Automatically generates a professional project overview.
+
+### 4. Health & Diagnostics (`mkagent doctor`)
+- **Environment Validation**: Checks for configuration presence and API key availability.
+- **Masked Security**: Displays API key status while keeping raw keys hidden.
+- **Intelligence Preview**: Shows exactly what `mkagent` detects about the current project's stack.
+
+### 5. Seamless Maintenance (`mkagent regenerate`)
+- **Dynamic Updates**: Refreshes existing `CLAUDE.md`, `AGENTS.md`, or `MEMORY.md` files with the latest project context without losing structural integrity.
+
+## Technical Stack
+- **CLI Framework**: Commander.js
+- **Terminal UI**: @clack/prompts
+- **Utilities**: fs-extra, chalk, ora
+- **Build**: TypeScript (ESM)

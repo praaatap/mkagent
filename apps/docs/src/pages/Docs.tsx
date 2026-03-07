@@ -2,45 +2,54 @@ import React from 'react'
 
 const Docs: React.FC = () => {
     return (
-        <div className="py-20 max-w-4xl mx-auto flex gap-12">
-            <div className="flex-1">
-                <section id="getting-started" className="mb-20">
-                    <h2 className="text-4xl font-black mb-8 tracking-tighter">Getting Started</h2>
-                    <p className="text-lg text-white/60 mb-8 leading-relaxed">
-                        Boost your productivity by providing your AI agents with the perfect context. mkagent handles the heavy lifting of writing project-specific rules.
-                    </p>
-                    <div className="p-6 bg-black/50 rounded-2xl border border-white/5 font-mono text-[#00f5ff] mb-4">
-                        npm install -g mkagent
+        <div className="py-20 max-w-4xl mx-auto px-6">
+            <header className="mb-16">
+                <span className="text-accent-cyan font-bold tracking-[0.2em] uppercase text-[10px] mb-4 block">Core Documentation</span>
+                <h1 className="text-5xl font-black tracking-tighter">Getting Started</h1>
+            </header>
+
+            <div className="space-y-24">
+                <section id="getting-started">
+                    <h2 className="text-3xl font-bold mb-6 tracking-tight">Installation</h2>
+                    <div className="p-8 rounded-2xl bg-white/5 border border-white/5 space-y-6">
+                        <p className="text-lg text-white/50 leading-relaxed">
+                            To begin your journey with <span className="text-accent-cyan font-bold italic">mkagent</span>, simple install the package globally or use it via npx:
+                        </p>
+                        <div className="bg-black/40 rounded-xl p-6 border border-white/5 font-mono text-sm group relative overflow-hidden">
+                            <div className="flex items-center justify-between">
+                                <code className="text-accent-cyan">$ npm install -g mkagent</code>
+                                <div className="text-[10px] text-white/20 uppercase font-black tracking-widest bg-white/5 px-2 py-1 rounded">Bash</div>
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-sm text-white/30 italic">Global installation is recommended for CLI usage.</p>
                 </section>
 
-                <section id="configuration" className="mb-20">
+                <section id="configuration">
                     <h2 className="text-3xl font-bold mb-6 tracking-tight">Configuration</h2>
                     <p className="text-white/60 mb-8 leading-relaxed">
                         Before initializing your first project, you'll need to configure your AI providers. We support OpenAI, Anthropic, and Google.
                     </p>
-                    <div className="p-6 bg-black/50 rounded-2xl border border-white/5 font-mono text-white/80">
-                        <span className="text-[#00f5ff]">$</span> mkagent config
+                    <div className="bg-black/40 rounded-xl p-6 border border-white/5 font-mono text-sm text-white/80">
+                        <span className="text-accent-cyan">$</span> mkagent config
                     </div>
                     <p className="mt-6 text-white/60">
                         This will prompt you for your API keys and your default model choice. Keys are stored safely in <code>~/.mkagent/config.json</code>.
                     </p>
                 </section>
 
-                <section id="usage" className="mb-20">
+                <section id="usage">
                     <h2 className="text-3xl font-bold mb-6 tracking-tight">Core Usage</h2>
                     <p className="text-white/60 mb-8 leading-relaxed">
                         To scaffold a new project with AI-generated docs:
                     </p>
-                    <div className="p-6 bg-black/50 rounded-2xl border border-white/5 font-mono text-white/80">
-                        <span className="text-[#00f5ff]">$</span> mkagent init
+                    <div className="bg-black/40 rounded-xl p-6 border border-white/5 font-mono text-sm text-white/80">
+                        <span className="text-accent-cyan">$</span> mkagent init
                     </div>
                     <p className="mt-6 text-white/60">
                         If you're in an existing project and want to refresh the agent files:
                     </p>
-                    <div className="p-6 bg-black/50 rounded-2xl border border-white/5 font-mono text-white/80">
-                        <span className="text-[#00f5ff]">$</span> mkagent regenerate
+                    <div className="bg-black/40 rounded-xl p-6 border border-white/5 font-mono text-sm text-white/80">
+                        <span className="text-accent-cyan">$</span> mkagent regenerate
                     </div>
                 </section>
             </div>

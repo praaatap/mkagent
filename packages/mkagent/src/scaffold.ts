@@ -1,9 +1,10 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { ProjectOptions } from './prompts.js';
+import { execSync } from 'child_process';
 
 export async function scaffoldProject(folderPath: string, options: ProjectOptions) {
-    const { folderName, useAppRouter, useTailwind, useSrcDir, importAlias } = options;
+    const { folderName, useAppRouter, useTailwind, useSrcDir, importAlias, template } = options;
 
     // Create base folder
     await fs.ensureDir(folderPath);
@@ -27,7 +28,13 @@ export async function scaffoldProject(folderPath: string, options: ProjectOption
 
     // Default Files
     if (useAppRouter) {
-        await fs.writeFile(path.join(folderPath, contentDir, 'page.tsx'), 'export default function Page() { return <main className="flex min-h-screen flex-col items-center justify-between p-24"><h1>Welcome to mkagent</h1></main>; }\n');
+        let pageContent = 'export default function Page() { return <main className="flex min-h-screen flex-col items-center justify-between p-24"><h1>Welcome to mkagent</h1></main>; }\n';
+        if (template === 'api') {
+            pageContent = 'export default function Page() { return <main className="flex min-h-screen flex-col items-center justify-center p-24"><h1>API Service - mkagent</h1><p>Running on Next.js App Router</p></main>; }\n';
+        } else if (template === 'dashboard') {
+            pageContent = 'export default function Dashboard() { return <div className="p-8"><h1>Admin Dashboard</h1><div className="grid grid-cols-3 gap-4 mt-4"><div className="bg-slate-100 p-4 rounded shadow">Stats</div></div></div>; }\n';
+        }
+        await fs.writeFile(path.join(folderPath, contentDir, 'page.tsx'), pageContent);
         await fs.writeFile(path.join(folderPath, contentDir, 'layout.tsx'), 'export default function RootLayout({ children }: { children: React.ReactNode }) { return (<html lang="en"><body>{children}</body></html>); }\n');
         await fs.writeFile(path.join(folderPath, contentDir, 'globals.css'), useTailwind ? '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n' : '/* Global CSS */\n');
     } else {
@@ -55,6 +62,15 @@ export default config;
         await fs.writeFile(path.join(folderPath, 'postcss.config.js'), 'module.exports = { plugins: { tailwindcss: {}, autoprefixer: {}, }, };\n');
     }
 
+    // package.json dependencies based on template
+    const templateDeps: Record<string, string> = {};
+    if (template === 'saas' || template === 'ecommerce') {
+        templateDeps['stripe'] = '^14.0.0';
+        templateDeps['@clerk/nextjs'] = '^4.29.9';
+    } else if (template === 'api') {
+        templateDeps['zod'] = '^3.22.4';
+    }
+
     // package.json
     const pkgJson = {
         name: options.folderName,
@@ -73,6 +89,7 @@ export default config;
             "react-dom": "^18.2.0",
             "lucide-react": "^0.344.0",
             "framer-motion": "^11.0.8",
+            ...templateDeps,
             ...(useTailwind ? { "tailwindcss": "^3.4.1", "postcss": "^8.4.35", "autoprefixer": "^10.4.17" } : {})
         }
     };
@@ -96,7 +113,7 @@ export default config;
             "jsx": "preserve",
             "incremental": true,
             "plugins": [{ "name": "next" }],
-            "paths": { [importAlias || "@/*"]: ["./src/*"] }
+            "paths": { [importAlias || "@/*"]: [useSrcDir ? "./src/*" : "./*"] }
         },
         "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
         "exclude": ["node_modules"]
@@ -105,4 +122,13 @@ export default config;
 
     await fs.writeFile(path.join(folderPath, '.gitignore'), 'node_modules\n.next\nout\nbuild\n.env\n.env.local\n.DS_Store\n');
     await fs.writeFile(path.join(folderPath, '.env.example'), '# AI Agent Keys Example\nNEXT_PUBLIC_AI_ENABLE=true\n');
+
+    // Git initialization
+    try {
+        execSync('git init', { cwd: folderPath, stdio: 'ignore' });
+        execSync('git add .', { cwd: folderPath, stdio: 'ignore' });
+        execSync('git commit -m "initial commit by mkagent"', { cwd: folderPath, stdio: 'ignore' });
+    } catch (e) {
+        // Git might not be installed or configured, fail silently for core scaffolding
+    }
 }

@@ -31,7 +31,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
                 ))}
             </nav>
 
-            <div className="mt-12 p-6 bg-gradient-to-b from-[#00f5ff]/10 to-transparent border border-[#00f5ff]/20 rounded-2xl">
+            <div className="mt-12 p-6 bg-linear-to-b from-accent-cyan/10 to-transparent border border-accent-cyan/20 rounded-2xl">
                 <h5 className="text-xs font-bold mb-2">Need help?</h5>
                 <p className="text-[10px] text-white/40 leading-relaxed mb-4">
                     Join our Discord community for real-time support and agent engineering tips.

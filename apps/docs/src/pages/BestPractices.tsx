@@ -22,10 +22,10 @@ const BestPractices: React.FC = () => {
                         <p className="text-white/60 leading-relaxed">
                             When using mkagent, the quality of generated instructions depends on the clarity of your project structure. Avoid vague naming conventions.
                         </p>
-                        <div className="p-6 bg-[#00f5ff]/5 border border-[#00f5ff]/20 rounded-2xl">
-                            <h5 className="text-[#00f5ff] font-bold text-sm mb-2">Pro Tip</h5>
+                        <div className="p-6 bg-accent-cyan/5 border border-accent-cyan/20 rounded-2xl">
+                            <h5 className="text-accent-cyan font-bold text-sm mb-2">Pro Tip</h5>
                             <p className="text-xs text-white/50">
-                                Always include a detailed <code className="text-[#00f5ff]">package.json</code> description. mkagent uses this to prime the AI models with high-level intent.
+                                Always include a detailed <code className="text-accent-cyan">package.json</code> description. mkagent uses this to prime the AI models with high-level intent.
                             </p>
                         </div>
                     </div>
@@ -37,7 +37,7 @@ const BestPractices: React.FC = () => {
                         Organize your codebase into logical domains. mkagent performs best when it can map instructions to specific directory segments.
                     </p>
                     <pre className="p-6 bg-[#0a0a0f] border border-white/5 rounded-2xl overflow-x-auto">
-                        <code className="text-xs text-[#00f5ff]">
+                        <code className="text-xs text-accent-cyan">
                             {`src/
 ├── core/       # Shared business logic
 ├── services/   # Infrastructure and APIs
@@ -50,11 +50,11 @@ const BestPractices: React.FC = () => {
                 <section id="case-studies">
                     <h2 className="text-2xl font-bold mb-6">Case Studies</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-[#00f5ff]/30 transition-colors">
+                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-accent-cyan/30 transition-colors">
                             <h3 className="font-bold mb-2">Next.js Enterprise</h3>
                             <p className="text-xs text-white/40">How a Fintech leader uses mkagent to maintain 100% agent context in a 50k LOC monorepo.</p>
                         </div>
-                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-[#9d00ff]/30 transition-colors">
+                        <div className="p-8 bg-white/5 border border-white/10 rounded-3xl hover:border-accent-purple/30 transition-colors">
                             <h3 className="font-bold mb-2">Edge Computing</h3>
                             <p className="text-xs text-white/40">Optimizing mkagent for low-latency agent reasoning on the edge.</p>
                         </div>

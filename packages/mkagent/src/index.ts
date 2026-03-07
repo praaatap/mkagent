@@ -4,11 +4,18 @@ import { intro, outro, cancel, confirm, isCancel } from '@clack/prompts';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
-import { getConfig, maskKey } from './config.js';
+import { getActiveProfile, maskKey, saveConfig, listProfiles, getProfile } from './config.js';
 import { runConfigPrompt, runInitPrompt } from './prompts.js';
 import { orchestrateGeneration } from './generate.js';
-import { generateContent, PromptContext } from './ai.js';
+import { generateContent, PromptContext, verifyKey } from './ai.js';
 import { detectStack, ProjectIntelligence } from './detect.js';
+import { runAudit } from './audit.js';
+import { runCompress } from './compress.js';
+import { runTokens } from './tokens.js';
+import { runStats } from './stats.js';
+import { runSync } from './sync.js';
+import { runChat } from './chat.js';
+import { runWatch } from './watch.js';
 import ora from 'ora';
 
 const program = new Command();
@@ -22,26 +29,32 @@ program
     .command('config')
     .description('Configure API keys and default AI model')
     .option('--show', 'Show the currently saved config')
+    .option('--profile <name>', 'Work on a specific profile')
     .action(async (options) => {
         intro(chalk.bgCyan(chalk.black(' mkagent config ')));
 
         if (options.show) {
-            const config = await getConfig();
-            if (!config) {
-                console.log(chalk.yellow('No configuration found. Run `npx mkagent config` to create one.'));
+            const profile = options.profile ? await getProfile(options.profile) : await getActiveProfile();
+            if (!profile) {
+                console.log(chalk.yellow('No profile found. Run `mkagent config` to create one.'));
             } else {
-                console.log(chalk.green('Current Configuration:'));
-                console.log(`  Default Model: ${chalk.bold(config.defaultModel)}`);
-                console.log(`  OpenAI Key:    ${maskKey(config.keys?.openai)}`);
-                console.log(`  Anthropic Key: ${maskKey(config.keys?.anthropic)}`);
-                console.log(`  Gemini Key:    ${maskKey(config.keys?.gemini)}`);
+                console.log(chalk.green(`Profile: ${chalk.bold(options.profile || 'Active')}`));
+                console.log(`  Default Model: ${chalk.bold(profile.defaultModel)}`);
+                console.log(`  OpenAI Key:    ${maskKey(profile.keys?.openai)}`);
+                console.log(`  Anthropic Key: ${maskKey(profile.keys?.anthropic)}`);
+                console.log(`  Gemini Key:    ${maskKey(profile.keys?.gemini)}`);
+                if (profile.githubToken) console.log(`  GitHub Token:  ${maskKey(profile.githubToken)}`);
+            }
+            const profiles = await listProfiles();
+            if (profiles.length > 1) {
+                console.log(chalk.dim(`\nAvailable profiles: ${profiles.join(', ')}`));
             }
             outro('Done.');
             return;
         }
 
         await runConfigPrompt();
-        outro(chalk.green('Configuration saved successfully!'));
+        outro(chalk.green('Configuration updated!'));
     });
 
 program
@@ -51,15 +64,14 @@ program
     .action(async (options) => {
         intro(chalk.bgCyan(chalk.black(' mkagent init ')));
 
-        let config = await getConfig();
-        if (!config || !config.keys || !config.keys[config.defaultModel]) {
+        let profile = await getActiveProfile();
+        if (!profile || !profile.keys[profile.defaultModel]) {
             console.log(chalk.yellow('No valid configuration found. Let\'s set it up first.'));
-            const newConfig = await runConfigPrompt();
-            if (!newConfig) return;
-            config = await getConfig(); // reload
+            await runConfigPrompt();
+            profile = await getActiveProfile(); // reload
         }
 
-        if (!config) return cancel('Configuration missing. Aborting.');
+        if (!profile) return cancel('Configuration missing. Aborting.');
 
         const projectOptions = await runInitPrompt();
         if (!projectOptions) return;
@@ -77,7 +89,6 @@ program
         const intelligence = await detectStack();
 
         await orchestrateGeneration(
-            config,
             targetDir,
             projectOptions,
             intelligence,
@@ -95,31 +106,35 @@ program
         const spinner = ora('Checking configuration...').start();
 
         try {
-            const config = await getConfig();
-            if (!config) {
-                spinner.fail(chalk.red('No configuration file found. Run `mkagent config` to set up.'));
+            const profile = await getActiveProfile();
+            if (!profile) {
+                spinner.fail(chalk.red('No active profile found. Run `mkagent config` to set up.'));
             } else {
-                spinner.succeed(chalk.green('Configuration file found.'));
+                spinner.succeed(chalk.green(`Active profile: ${chalk.bold(profile.defaultModel)}`));
 
-                const model = config.defaultModel;
-                const key = config.keys[model];
+                const model = profile.defaultModel;
+                const key = profile.keys[model];
 
                 if (key) {
-                    spinner.succeed(chalk.green(`API Key for ${model} is present: ${maskKey(key)}`));
+                    spinner.start(`Verifying API Key for ${model}...`);
+                    const isValid = await verifyKey(model as any, key);
+                    if (isValid) {
+                        spinner.succeed(chalk.green(`API Key for ${model} is valid and functional.`));
+                    } else {
+                        spinner.fail(chalk.red(`API Key for ${model} failed live validation! Check your key/balance.`));
+                    }
                 } else {
                     spinner.fail(chalk.red(`API Key for ${model} is missing!`));
                 }
             }
 
             const intelligence = await detectStack();
-            console.log(chalk.cyan('\nProject Intelligence:'));
+            console.log(chalk.cyan('\nProject Context:'));
             console.log(`- Detected Stack: ${chalk.bold(intelligence.stack)}`);
             console.log(`- TypeScript: ${intelligence.hasTypeScript ? chalk.green('Yes') : chalk.dim('No')}`);
             console.log(`- Tailwind: ${intelligence.hasTailwind ? chalk.green('Yes') : chalk.dim('No')}`);
-            console.log(`- ESLint: ${intelligence.hasESLint ? chalk.green('Yes') : chalk.dim('No')}`);
-            console.log(`- Monorepo: ${intelligence.isMonorepo ? chalk.green('Yes') : chalk.dim('No')}`);
 
-            outro(chalk.green('\nHealth check complete. You are ready to go!'));
+            outro(chalk.green('\nHealth check complete.'));
         } catch (err: any) {
             spinner.fail(chalk.red(`Doctor failed: ${err.message}`));
             outro(chalk.red('Please fix the errors above.'));
@@ -133,8 +148,8 @@ program
     .action(async (options) => {
         intro(chalk.bgCyan(chalk.black(' mkagent regenerate ')));
 
-        const config = await getConfig();
-        if (!config || !config.keys || !config.keys[config.defaultModel]) {
+        const profile = await getActiveProfile();
+        if (!profile || !profile.keys[profile.defaultModel]) {
             return cancel('Invalid configuration. Run `npx mkagent config` first.');
         }
 
@@ -149,7 +164,7 @@ program
         };
 
         const agentsToGen = [];
-        const possibleAgents = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
+        const possibleAgents = ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'COPILOT.md', '.cursorrules'];
         for (const agent of possibleAgents) {
             if (await fs.pathExists(path.join(process.cwd(), agent))) {
                 agentsToGen.push(agent);
@@ -157,15 +172,35 @@ program
         }
 
         if (agentsToGen.length === 0) {
-            return cancel('No existing agent files found in the current folder.');
+            return cancel('No existing agent files found.');
         }
 
         const spinner = ora(`⚡ Regenerating agents...`).start();
         for (const file of agentsToGen) {
-            const res = await generateContent(config, file, context);
+            const filePath = path.join(process.cwd(), file);
+            const existingContent = await fs.readFile(filePath, 'utf-8');
+
+            const mergePrompt = `You are a precision merge tool. Your task is to merge the following EXISTING ${file} content with NEW updates while PRESERVING any custom rules, notes, or specific instructions the user has added.
+            
+            EXISTING CONTENT:
+            ${existingContent}
+            
+            INSTRUCTIONS FOR NEW VERSION:
+            - Update the architecture and project intelligence based on latest context.
+            - Ensure all guardrails are up to date.
+            - DO NOT remove user-added custom personality traits or specific edge-case rules.
+            - Combine both into a cohesive, non-redundant ${file} file.
+            
+            Output ONLY the merged raw content.`;
+
+            const res = await generateContent(profile, file, {
+                ...context,
+                overridePrompt: mergePrompt
+            });
+
             if (!options.dryRun) {
                 if (res.success) {
-                    await fs.writeFile(path.join(process.cwd(), file), res.content);
+                    await fs.writeFile(filePath, res.content);
                 } else {
                     spinner.fail(chalk.yellow(`Failed to regenerate ${file}: ${res.error}`));
                     spinner.start();
@@ -178,6 +213,99 @@ program
         }
         spinner.succeed(chalk.green('Regeneration complete!'));
         outro('Done.');
+    });
+
+// Placeholder for new commands in Phase 2 & 3
+program
+    .command('audit')
+    .description('Scan codebase for hardcoded secrets, TODOs, and console.logs')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent audit ')));
+        try {
+            await runAudit();
+            outro(chalk.green('Audit complete! Findings appended to MEMORY.md.'));
+        } catch (err: any) {
+            outro(chalk.red(`Audit failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('watch')
+    .description('Watch project for changes and auto-update memory')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent watch ')));
+        try {
+            await runWatch();
+        } catch (err: any) {
+            outro(chalk.red(`Watch failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('stats')
+    .description('Show visual project agent stats')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent stats ')));
+        try {
+            await runStats();
+            outro(chalk.green('Stats display complete!'));
+        } catch (err: any) {
+            outro(chalk.red(`Stats failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('sync')
+    .description('Sync agent files with GitHub Gist')
+    .option('--push', 'Push local files to Gist')
+    .option('--pull', 'Pull files from Gist')
+    .action(async (options) => {
+        intro(chalk.bgCyan(chalk.black(' mkagent sync ')));
+        try {
+            const direction = options.pull ? 'pull' : 'push';
+            await runSync(direction);
+            outro(chalk.green(`Sync (${direction}) complete!`));
+        } catch (err: any) {
+            outro(chalk.red(`Sync failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('tokens')
+    .description('Calculate token usage for agent .md files')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent tokens ')));
+        try {
+            await runTokens();
+            outro(chalk.green('Token calculation complete!'));
+        } catch (err: any) {
+            outro(chalk.red(`Calculation failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('chat')
+    .description('Start a terminal chat session with AI')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent chat ')));
+        try {
+            await runChat();
+        } catch (err: any) {
+            outro(chalk.red(`Chat failed: ${err.message}`));
+        }
+    });
+
+program
+    .command('compress')
+    .description('Minify agent .md files to reduce token usage')
+    .action(async () => {
+        intro(chalk.bgCyan(chalk.black(' mkagent compress ')));
+        try {
+            await runCompress();
+            outro(chalk.green('Compression complete!'));
+        } catch (err: any) {
+            outro(chalk.red(`Compression failed: ${err.message}`));
+        }
     });
 
 program.parse(process.argv);

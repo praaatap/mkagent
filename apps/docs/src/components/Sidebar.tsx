@@ -52,7 +52,7 @@ const Sidebar: React.FC = () => {
                 <input
                     type="text"
                     placeholder="Search docs..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-xs font-medium focus:outline-none focus:border-[#00f5ff]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-hidden focus:border-accent-cyan/50 transition-colors"
                 />
             </div>
 
@@ -67,15 +67,17 @@ const Sidebar: React.FC = () => {
                                 <NavLink
                                     key={item.name}
                                     to={item.path}
-                                    className={({ isActive }) => `
-                                        flex items-center justify-between group px-2 py-2 rounded-lg transition-all no-underline
-                                        ${isActive ? 'bg-[#00f5ff]/10 text-[#00f5ff]' : 'text-white/50 hover:text-white hover:bg-white/5'}
-                                    `}
+                                    className={({ isActive }) =>
+                                        `block px-4 py-2 text-sm rounded-lg no-underline transition-colors ${isActive
+                                            ? "bg-accent-cyan/10 text-accent-cyan font-bold"
+                                            : "text-white/40 hover:text-white hover:bg-white/5"
+                                        }`
+                                    }
                                 >
                                     {({ isActive }) => (
                                         <>
                                             <div className="flex items-center gap-3">
-                                                <item.icon className={`w-4 h-4 ${isActive ? 'text-[#00f5ff]' : 'group-hover:text-white'}`} />
+                                                <item.icon className={`w-4 h-4 ${isActive ? 'text-accent-cyan' : 'group-hover:text-white'}`} />
                                                 <span className="text-sm font-medium">{item.name}</span>
                                             </div>
                                             <ChevronRight className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${isActive ? 'opacity-100' : ''}`} />

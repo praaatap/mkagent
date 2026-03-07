@@ -10,22 +10,28 @@ import { ProjectIntelligence } from './detect.js';
 
 import { ProjectOptions } from './prompts.js';
 
+import { getActiveProfile, ProfileConfig } from './config.js';
+
 export async function orchestrateGeneration(
-    config: MkagentConfig,
     targetFolder: string,
     options: ProjectOptions,
     intelligence: ProjectIntelligence,
     dryRun: boolean = false
 ) {
-    const { folderName, projectType, description, commands, forbidden, agents } = options;
+    const profile = await getActiveProfile();
+    if (!profile) {
+        throw new Error('No active profile found. Run `mkagent config` first.');
+    }
+
+    const { folderName, projectType, description, agents } = options;
     const context: PromptContext = { ...options, intelligence };
 
-    const spinner = ora(`⚡ Generating agents with ${config.defaultModel}...`).start();
+    const spinner = ora(`⚡ Generating agents with ${profile.defaultModel}...`).start();
 
     try {
         for (const filename of agents) {
-            spinner.text = `⚡ Generating ${filename} with ${config.defaultModel}...`;
-            const res = await generateContent(config, filename, context);
+            spinner.text = `⚡ Generating ${filename} with ${profile.defaultModel}...`;
+            const res = await generateContent(profile, filename, context);
 
             if (!res.success) {
                 spinner.fail(chalk.yellow(`Warning: AI generation failed (${res.error}). Using template for ${filename}.`));
@@ -42,8 +48,8 @@ export async function orchestrateGeneration(
             }
         }
 
-        spinner.text = `⚡ Generating README.md with ${config.defaultModel}...`;
-        const resReadme = await generateContent(config, 'README.md', context);
+        spinner.text = `⚡ Generating README.md with ${profile.defaultModel}...`;
+        const resReadme = await generateContent(profile, 'README.md', context);
         if (!dryRun) {
             await fs.ensureDir(targetFolder);
             await fs.writeFile(path.join(targetFolder, 'README.md'), resReadme.success ? resReadme.content : `# ${folderName}\n\n${description}`);
