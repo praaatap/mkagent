@@ -20,10 +20,21 @@ import ora from 'ora';
 
 const program = new Command();
 
+const LOGO = `
+  ${chalk.cyan('■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■')}
+  ${chalk.cyan('■')} ${chalk.bold('MKAGENT')} ${chalk.dim('— Professional AI Intelligence CLI')} ${chalk.cyan('■')}
+  ${chalk.cyan('■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■')}
+`;
+
 program
     .name('mkagent')
     .description('AI-powered file generation and scaffolding tool.')
     .version('1.0.0');
+
+const showIntro = (cmd: string) => {
+    console.log(LOGO);
+    intro(`${chalk.bgCyan(chalk.black(` mkagent ${cmd} `))} ${chalk.dim('v1.0.0')}`);
+};
 
 program
     .command('config')
@@ -31,7 +42,7 @@ program
     .option('--show', 'Show the currently saved config')
     .option('--profile <name>', 'Work on a specific profile')
     .action(async (options) => {
-        intro(chalk.bgCyan(chalk.black(' mkagent config ')));
+        showIntro('config');
 
         if (options.show) {
             const profile = options.profile ? await getProfile(options.profile) : await getActiveProfile();
@@ -62,7 +73,7 @@ program
     .description('Initialize a new project with AI scaffolding')
     .option('--dry-run', 'Preview without writing files')
     .action(async (options) => {
-        intro(chalk.bgCyan(chalk.black(' mkagent init ')));
+        showIntro('init');
 
         let profile = await getActiveProfile();
         if (!profile || !profile.keys[profile.defaultModel]) {
@@ -102,7 +113,7 @@ program
     .command('doctor')
     .description('Check the health of your mkagent environment')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent doctor ')));
+        showIntro('doctor');
         const spinner = ora('Checking configuration...').start();
 
         try {
@@ -131,8 +142,13 @@ program
             const intelligence = await detectStack();
             console.log(chalk.cyan('\nProject Context:'));
             console.log(`- Detected Stack: ${chalk.bold(intelligence.stack)}`);
-            console.log(`- TypeScript: ${intelligence.hasTypeScript ? chalk.green('Yes') : chalk.dim('No')}`);
-            console.log(`- Tailwind: ${intelligence.hasTailwind ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- Monorepo:       ${intelligence.isMonorepo ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- TypeScript:     ${intelligence.hasTypeScript ? chalk.green('Yes') : chalk.dim('No')}`);
+            console.log(`- Tailwind:       ${intelligence.hasTailwind ? chalk.green('Yes') : chalk.dim('No')}`);
+
+            if (!profile) {
+                console.log(chalk.yellow('\n💡 Next Step: Run `mkagent config` to link your AI models.'));
+            }
 
             outro(chalk.green('\nHealth check complete.'));
         } catch (err: any) {
@@ -146,7 +162,7 @@ program
     .description('Re-generate agent .md files in current folder')
     .option('--dry-run', 'Preview without writing files')
     .action(async (options) => {
-        intro(chalk.bgCyan(chalk.black(' mkagent regenerate ')));
+        showIntro('regenerate');
 
         const profile = await getActiveProfile();
         if (!profile || !profile.keys[profile.defaultModel]) {
@@ -220,7 +236,7 @@ program
     .command('audit')
     .description('Scan codebase for hardcoded secrets, TODOs, and console.logs')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent audit ')));
+        showIntro('audit');
         try {
             await runAudit();
             outro(chalk.green('Audit complete! Findings appended to MEMORY.md.'));
@@ -233,7 +249,7 @@ program
     .command('watch')
     .description('Watch project for changes and auto-update memory')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent watch ')));
+        showIntro('watch');
         try {
             await runWatch();
         } catch (err: any) {
@@ -245,7 +261,7 @@ program
     .command('stats')
     .description('Show visual project agent stats')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent stats ')));
+        showIntro('stats');
         try {
             await runStats();
             outro(chalk.green('Stats display complete!'));
@@ -260,7 +276,7 @@ program
     .option('--push', 'Push local files to Gist')
     .option('--pull', 'Pull files from Gist')
     .action(async (options) => {
-        intro(chalk.bgCyan(chalk.black(' mkagent sync ')));
+        showIntro('sync');
         try {
             const direction = options.pull ? 'pull' : 'push';
             await runSync(direction);
@@ -274,7 +290,7 @@ program
     .command('tokens')
     .description('Calculate token usage for agent .md files')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent tokens ')));
+        showIntro('tokens');
         try {
             await runTokens();
             outro(chalk.green('Token calculation complete!'));
@@ -287,7 +303,7 @@ program
     .command('chat')
     .description('Start a terminal chat session with AI')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent chat ')));
+        showIntro('chat');
         try {
             await runChat();
         } catch (err: any) {
@@ -299,7 +315,7 @@ program
     .command('compress')
     .description('Minify agent .md files to reduce token usage')
     .action(async () => {
-        intro(chalk.bgCyan(chalk.black(' mkagent compress ')));
+        showIntro('compress');
         try {
             await runCompress();
             outro(chalk.green('Compression complete!'));

@@ -1,6 +1,7 @@
 {
     "name": "mkagent",
     "version": "1.0.0",
+    "type": "module",
     "description": "AI-powered file generation and scaffolding CLI",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

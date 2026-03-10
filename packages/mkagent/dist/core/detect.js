@@ -1,22 +1,8 @@
 import fs from 'fs-extra';
 import path from 'path';
-
-export interface ProjectIntelligence {
-    name: string;
-    stack: string;
-    description: string;
-    dependencies: Record<string, string>;
-    hasTypeScript: boolean;
-    hasTailwind: boolean;
-    hasESLint: boolean;
-    hasPrettier: boolean;
-    configFiles: string[];
-    isMonorepo: boolean;
-}
-
-export async function detectStack(projectPath: string = process.cwd()): Promise<ProjectIntelligence> {
+export async function detectStack(projectPath = process.cwd()) {
     const pkgJsonPath = path.join(projectPath, 'package.json');
-    const intelligence: ProjectIntelligence = {
+    const intelligence = {
         name: path.basename(projectPath),
         stack: 'Other',
         description: '',
@@ -31,42 +17,39 @@ export async function detectStack(projectPath: string = process.cwd()): Promise<
         configFiles: [],
         isMonorepo: false,
     };
-
     const commonConfigs = [
         'tailwind.config.js', 'tailwind.config.ts',
         'next.config.js', 'next.config.mjs',
         'vite.config.ts', 'vite.config.js',
         'turbo.json', 'lucide-react'
     ];
-
     for (const file of commonConfigs) {
         if (await fs.pathExists(path.join(projectPath, file))) {
             intelligence.configFiles.push(file);
         }
     }
-
     if (await fs.pathExists(pkgJsonPath)) {
         const pkg = await fs.readJson(pkgJsonPath);
         intelligence.name = pkg.name || intelligence.name;
         intelligence.description = pkg.description || '';
         intelligence.dependencies = { ...pkg.dependencies, ...pkg.devDependencies };
-
         const deps = intelligence.dependencies;
-        if (deps.next) intelligence.stack = 'Next.js';
-        else if (deps.react) intelligence.stack = 'React';
-        else if (deps.express || deps.nestjs || deps.fastify) intelligence.stack = 'Node.js API';
-        else if (intelligence.isMonorepo) intelligence.stack = 'Turbo Monorepo';
-
+        if (deps.next)
+            intelligence.stack = 'Next.js';
+        else if (deps.react)
+            intelligence.stack = 'React';
+        else if (deps.express || deps.nestjs || deps.fastify)
+            intelligence.stack = 'Node.js API';
+        else if (intelligence.isMonorepo)
+            intelligence.stack = 'Turbo Monorepo';
         intelligence.hasTypeScript = intelligence.hasTypeScript || !!deps.typescript;
         intelligence.hasTailwind = !!(deps.tailwindcss || intelligence.configFiles.some(f => f.startsWith('tailwind')));
         intelligence.isMonorepo = !!(pkg.workspaces || await fs.pathExists(path.join(projectPath, 'turbo.json')));
     }
-
     if (intelligence.stack === 'Other') {
         if (await fs.pathExists(path.join(projectPath, 'requirements.txt')) || await fs.pathExists(path.join(projectPath, 'pyproject.toml'))) {
             intelligence.stack = 'Python';
         }
     }
-
     return intelligence;
 }
