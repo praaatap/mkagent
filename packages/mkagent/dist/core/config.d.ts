@@ -2,23 +2,32 @@ export interface ModelParams {
     temperature?: number;
     maxTokens?: number;
 }
+export type ModelType = 'openai' | 'anthropic' | 'gemini' | 'openai-compatible' | 'local';
 export interface ProfileConfig {
-    defaultModel: 'openai' | 'anthropic' | 'gemini';
+    defaultModel: ModelType;
     keys: {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        'openai-compatible'?: string;
+        local?: string;
     };
     backupKeys?: {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        'openai-compatible'?: string;
+        local?: string;
     };
     modelParams?: {
         openai?: ModelParams;
         anthropic?: ModelParams;
         gemini?: ModelParams;
+        'openai-compatible'?: ModelParams;
+        local?: ModelParams;
     };
+    baseUrl?: string;
+    modelName?: string;
     githubToken?: string;
 }
 export interface MkagentConfig {

@@ -3,86 +3,62 @@ import { NavLink } from 'react-router-dom'
 import {
     BookOpen,
     Terminal,
-    Settings,
     Cpu,
     Command,
     ShieldCheck,
     Layout as LayoutIcon,
-    Search,
-    ChevronRight
+    Server,
 } from 'lucide-react'
 
 const Sidebar: React.FC = () => {
     const sections = [
         {
-            title: 'Introduction',
+            title: 'Getting Started',
             items: [
                 { name: 'Overview', path: '/docs', icon: BookOpen },
-                { name: 'Getting Started', path: '/docs/getting-started', icon: Terminal },
+                { name: 'Playground', path: '/terminal', icon: Terminal },
             ]
         },
         {
             title: 'Configuration',
             items: [
-                { name: 'AI Providers', path: '/docs/providers', icon: Cpu },
-                { name: 'Environment', path: '/docs/config', icon: Settings },
+                { name: 'API Reference', path: '/docs/api', icon: LayoutIcon },
+                { name: 'AI Providers', path: '/docs/best-practices', icon: Cpu },
             ]
         },
         {
-            title: 'Core Concepts',
+            title: 'Advanced',
             items: [
                 { name: 'CLI Commands', path: '/terminal', icon: Command },
-                { name: 'API Reference', path: '/docs/api', icon: LayoutIcon },
-                { name: 'Guardrails', path: '/docs/guardrails', icon: ShieldCheck },
+                { name: 'Local LLMs', path: '/docs', icon: Server },
+                { name: 'Security', path: '/docs/best-practices', icon: ShieldCheck },
             ]
         },
-        {
-            title: 'Resources',
-            items: [
-                { name: 'Best Practices', path: '/docs/best-practices', icon: BookOpen },
-                { name: 'Changelog', path: '/docs/changelog', icon: Terminal },
-            ]
-        }
     ]
 
     return (
-        <aside className="w-64 border-r border-white/5 h-[calc(100vh-5rem)] overflow-y-auto sticky top-20 py-8 px-6 hidden lg:block scrollbar-hide">
-            <div className="relative mb-8">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                    type="text"
-                    placeholder="Search docs..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-hidden focus:border-accent-cyan/50 transition-colors"
-                />
-            </div>
-
-            <nav className="space-y-8">
+        <aside className="w-56 border-r border-white/[0.04] h-[calc(100vh-4rem)] overflow-y-auto sticky top-16 py-6 px-4 hidden lg:block">
+            <nav className="space-y-6">
                 {sections.map((section) => (
                     <div key={section.title}>
-                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/20 mb-4 px-2">
+                        <h4 className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/15 mb-3 px-3">
                             {section.title}
                         </h4>
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                             {section.items.map((item) => (
                                 <NavLink
                                     key={item.name}
                                     to={item.path}
+                                    end={item.path === '/docs'}
                                     className={({ isActive }) =>
-                                        `block px-4 py-2 text-sm rounded-lg no-underline transition-colors ${isActive
-                                            ? "bg-accent-cyan/10 text-accent-cyan font-bold"
-                                            : "text-white/40 hover:text-white hover:bg-white/5"
+                                        `flex items-center gap-2.5 px-3 py-2 text-[12px] rounded-lg no-underline transition-all ${isActive
+                                            ? "bg-accent-cyan/8 text-accent-cyan font-semibold"
+                                            : "text-white/30 hover:text-white/60 hover:bg-white/[0.03]"
                                         }`
                                     }
                                 >
-                                    {({ isActive }) => (
-                                        <>
-                                            <div className="flex items-center gap-3">
-                                                <item.icon className={`w-4 h-4 ${isActive ? 'text-accent-cyan' : 'group-hover:text-white'}`} />
-                                                <span className="text-sm font-medium">{item.name}</span>
-                                            </div>
-                                            <ChevronRight className={`w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ${isActive ? 'opacity-100' : ''}`} />
-                                        </>
-                                    )}
+                                    <item.icon className="w-3.5 h-3.5 shrink-0" />
+                                    <span>{item.name}</span>
                                 </NavLink>
                             ))}
                         </div>

@@ -13,13 +13,54 @@
   body {
     @apply bg-[var(--color-bg-dark)] text-white antialiased;
     background-image:
-      radial-gradient(circle at 20% 20%, rgba(0, 245, 255, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 80% 80%, rgba(157, 0, 255, 0.05) 0%, transparent 40%);
+      radial-gradient(circle at 20% 20%, rgba(0, 245, 255, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(157, 0, 255, 0.03) 0%, transparent 40%);
+  }
+
+  ::selection {
+    background: rgba(0, 245, 255, 0.2);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 245, 255, 0.15);
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-2xl;
+  }
+
+  .code-block {
+    @apply bg-[#0a0a14] border border-white/[0.06] rounded-xl p-5 font-mono text-sm overflow-x-auto;
+  }
+
+  .section-label {
+    @apply text-accent-cyan font-bold tracking-[0.2em] uppercase text-[10px] mb-4 block;
+  }
+
+  .section-title {
+    @apply text-3xl font-bold mb-6 tracking-tight;
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 60px rgba(0, 245, 255, 0.08);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 60px rgba(157, 0, 255, 0.08);
   }
 }

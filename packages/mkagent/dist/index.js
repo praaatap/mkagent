@@ -107,9 +107,25 @@ program
             spinner.succeed(chalk.green(`Active profile: ${chalk.bold(profile.defaultModel)}`));
             const model = profile.defaultModel;
             const key = profile.keys[model];
-            if (key) {
+            if (profile.baseUrl) {
+                console.log(chalk.dim(`  Endpoint: ${profile.baseUrl}`));
+            }
+            if (profile.modelName) {
+                console.log(chalk.dim(`  Model:    ${profile.modelName}`));
+            }
+            if (model === 'local') {
+                spinner.start(`Checking Ollama connection at ${profile.baseUrl || 'http://localhost:11434'}...`);
+                const isValid = await verifyKey(model, 'ollama', profile.baseUrl, profile.modelName);
+                if (isValid) {
+                    spinner.succeed(chalk.green(`Ollama is running and reachable.`));
+                }
+                else {
+                    spinner.fail(chalk.red(`Cannot reach Ollama. Is it running? Start with: ollama serve`));
+                }
+            }
+            else if (key) {
                 spinner.start(`Verifying API Key for ${model}...`);
-                const isValid = await verifyKey(model, key);
+                const isValid = await verifyKey(model, key, profile.baseUrl, profile.modelName);
                 if (isValid) {
                     spinner.succeed(chalk.green(`API Key for ${model} is valid and functional.`));
                 }

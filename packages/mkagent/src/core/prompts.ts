@@ -45,20 +45,54 @@ export async function runConfigPrompt() {
         options: [
             { value: 'openai', label: 'OpenAI (GPT-4o)' },
             { value: 'anthropic', label: 'Anthropic (Claude)' },
-            { value: 'gemini', label: 'Google (Gemini)' }
+            { value: 'gemini', label: 'Google (Gemini)' },
+            { value: 'openai-compatible', label: 'OpenAI-Compatible (LM Studio, vLLM, etc.)' },
+            { value: 'local', label: 'Local (Ollama)' }
         ],
         initialValue: pConfig.defaultModel
     });
     if (isCancel(defaultModel)) return cancel('Operation cancelled');
 
-    const apiKey = await text({
-        message: 'Enter Primary API key:',
-        placeholder: 'sk-...',
-        validate(value) {
-            if (value.length === 0) return 'Value is required!';
+    const isLocal = defaultModel === 'local';
+    const isCompatible = defaultModel === 'openai-compatible';
+
+    // For local/compatible models, prompt for endpoint and model name
+    if (isLocal || isCompatible) {
+        const defaultUrl = isLocal ? 'http://localhost:11434/v1' : 'http://localhost:1234/v1';
+        const baseUrl = await text({
+            message: `Enter ${isLocal ? 'Ollama' : 'API'} endpoint URL:`,
+            placeholder: defaultUrl,
+            defaultValue: defaultUrl
+        });
+        if (isCancel(baseUrl)) return cancel('Operation cancelled');
+        pConfig.baseUrl = baseUrl as string;
+
+        const defaultModelName = isLocal ? 'llama3.2' : 'default';
+        const modelName = await text({
+            message: 'Enter model name:',
+            placeholder: defaultModelName,
+            defaultValue: defaultModelName
+        });
+        if (isCancel(modelName)) return cancel('Operation cancelled');
+        pConfig.modelName = modelName as string;
+
+        if (isLocal) {
+            pConfig.keys[pConfig.defaultModel as keyof typeof pConfig.keys] = 'ollama';
         }
-    });
-    if (isCancel(apiKey)) return cancel('Operation cancelled');
+    }
+
+    // For cloud models, prompt for API key
+    if (!isLocal) {
+        const apiKey = await text({
+            message: `Enter ${isCompatible ? 'API key (or leave empty if none needed)' : 'Primary API key'}:`,
+            placeholder: 'sk-...',
+            validate(value) {
+                if (!isCompatible && value.length === 0) return 'Value is required!';
+            }
+        });
+        if (isCancel(apiKey)) return cancel('Operation cancelled');
+        pConfig.keys[defaultModel as keyof typeof pConfig.keys] = (apiKey as string) || 'none';
+    }
 
     const advanced = await confirm({
         message: 'Configure advanced settings? (Backup keys, params, Gist token)',
@@ -72,7 +106,7 @@ export async function runConfigPrompt() {
             placeholder: 'sk-...'
         });
         if (!isCancel(backupKey) && backupKey.length > 0) {
-            pConfig.backupKeys = { ...pConfig.backupKeys, [defaultModel as 'openai' | 'anthropic' | 'gemini']: backupKey as string };
+            pConfig.backupKeys = { ...pConfig.backupKeys, [defaultModel as string]: backupKey as string };
         }
 
         const temp = await text({
@@ -84,8 +118,8 @@ export async function runConfigPrompt() {
             const t = parseFloat(temp as string);
             if (!isNaN(t)) {
                 if (!pConfig.modelParams) pConfig.modelParams = {};
-                const m = defaultModel as 'openai' | 'anthropic' | 'gemini';
-                pConfig.modelParams[m] = { ...pConfig.modelParams[m], temperature: t };
+                const m = defaultModel as string;
+                (pConfig.modelParams as any)[m] = { ...(pConfig.modelParams as any)[m], temperature: t };
             }
         }
 
@@ -99,7 +133,9 @@ export async function runConfigPrompt() {
     }
 
     pConfig.defaultModel = defaultModel as any;
-    pConfig.keys[pConfig.defaultModel] = apiKey as string;
+    if (!isLocal && !isCompatible) {
+        // Keys already set above for non-local/compatible
+    }
     config.profiles[profileName] = pConfig;
     config.activeProfile = profileName;
 

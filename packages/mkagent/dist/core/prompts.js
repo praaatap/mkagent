@@ -42,22 +42,54 @@ export async function runConfigPrompt() {
         options: [
             { value: 'openai', label: 'OpenAI (GPT-4o)' },
             { value: 'anthropic', label: 'Anthropic (Claude)' },
-            { value: 'gemini', label: 'Google (Gemini)' }
+            { value: 'gemini', label: 'Google (Gemini)' },
+            { value: 'openai-compatible', label: 'OpenAI-Compatible (LM Studio, vLLM, etc.)' },
+            { value: 'local', label: 'Local (Ollama)' }
         ],
         initialValue: pConfig.defaultModel
     });
     if (isCancel(defaultModel))
         return cancel('Operation cancelled');
-    const apiKey = await text({
-        message: 'Enter Primary API key:',
-        placeholder: 'sk-...',
-        validate(value) {
-            if (value.length === 0)
-                return 'Value is required!';
+    const isLocal = defaultModel === 'local';
+    const isCompatible = defaultModel === 'openai-compatible';
+    // For local/compatible models, prompt for endpoint and model name
+    if (isLocal || isCompatible) {
+        const defaultUrl = isLocal ? 'http://localhost:11434/v1' : 'http://localhost:1234/v1';
+        const baseUrl = await text({
+            message: `Enter ${isLocal ? 'Ollama' : 'API'} endpoint URL:`,
+            placeholder: defaultUrl,
+            defaultValue: defaultUrl
+        });
+        if (isCancel(baseUrl))
+            return cancel('Operation cancelled');
+        pConfig.baseUrl = baseUrl;
+        const defaultModelName = isLocal ? 'llama3.2' : 'default';
+        const modelName = await text({
+            message: 'Enter model name:',
+            placeholder: defaultModelName,
+            defaultValue: defaultModelName
+        });
+        if (isCancel(modelName))
+            return cancel('Operation cancelled');
+        pConfig.modelName = modelName;
+        if (isLocal) {
+            pConfig.keys[pConfig.defaultModel] = 'ollama';
         }
-    });
-    if (isCancel(apiKey))
-        return cancel('Operation cancelled');
+    }
+    // For cloud models, prompt for API key
+    if (!isLocal) {
+        const apiKey = await text({
+            message: `Enter ${isCompatible ? 'API key (or leave empty if none needed)' : 'Primary API key'}:`,
+            placeholder: 'sk-...',
+            validate(value) {
+                if (!isCompatible && value.length === 0)
+                    return 'Value is required!';
+            }
+        });
+        if (isCancel(apiKey))
+            return cancel('Operation cancelled');
+        pConfig.keys[defaultModel] = apiKey || 'none';
+    }
     const advanced = await confirm({
         message: 'Configure advanced settings? (Backup keys, params, Gist token)',
         initialValue: false
@@ -95,7 +127,9 @@ export async function runConfigPrompt() {
         }
     }
     pConfig.defaultModel = defaultModel;
-    pConfig.keys[pConfig.defaultModel] = apiKey;
+    if (!isLocal && !isCompatible) {
+        // Keys already set above for non-local/compatible
+    }
     config.profiles[profileName] = pConfig;
     config.activeProfile = profileName;
     await saveConfig(config);

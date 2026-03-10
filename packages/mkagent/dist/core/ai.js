@@ -4,14 +4,19 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { agentsTemplate } from '../templates/agents.js';
 import { claudeTemplate } from '../templates/claude.js';
 import { geminiTemplate } from '../templates/gemini.js';
+import { memoryTemplate } from '../templates/memory.js';
+import { cursorrulesTemplate } from '../templates/cursorrules.js';
 function getFallback(filename, context) {
-    if (filename === 'CLAUDE.md') {
-        return claudeTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
-    }
-    if (filename === 'GEMINI.md') {
-        return geminiTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
-    }
-    return agentsTemplate(context.folderName, context.projectType, context.description, context.commands, context.forbidden);
+    const args = [context.folderName, context.projectType, context.description, context.commands, context.forbidden, context.intelligence];
+    if (filename === 'CLAUDE.md')
+        return claudeTemplate(...args);
+    if (filename === 'GEMINI.md')
+        return geminiTemplate(...args);
+    if (filename === 'MEMORY.md')
+        return memoryTemplate(...args);
+    if (filename === '.cursorrules')
+        return cursorrulesTemplate(...args);
+    return agentsTemplate(...args);
 }
 export async function generateContent(profile, filename, context) {
     const model = profile.defaultModel;
@@ -95,6 +100,32 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
             const response = await result.response;
             return response.text();
         }
+        else if (model === 'openai-compatible') {
+            const openai = new OpenAI({
+                apiKey: apiKey || 'none',
+                baseURL: profile.baseUrl || 'http://localhost:1234/v1'
+            });
+            const completion = await openai.chat.completions.create({
+                messages: [{ role: 'system', content: prompt }],
+                model: profile.modelName || 'default',
+                temperature: params.temperature ?? 0.7,
+                max_tokens: params.maxTokens ?? 2000
+            });
+            return completion.choices[0].message.content || '';
+        }
+        else if (model === 'local') {
+            const openai = new OpenAI({
+                apiKey: 'ollama',
+                baseURL: profile.baseUrl || 'http://localhost:11434/v1'
+            });
+            const completion = await openai.chat.completions.create({
+                messages: [{ role: 'system', content: prompt }],
+                model: profile.modelName || 'llama3.2',
+                temperature: params.temperature ?? 0.7,
+                max_tokens: params.maxTokens ?? 2000
+            });
+            return completion.choices[0].message.content || '';
+        }
         throw new Error('Unsupported model');
     }
     try {
@@ -121,7 +152,7 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
         return { success: false, content: getFallback(filename, context), error: err.message || 'Unknown error during API call' };
     }
 }
-export async function verifyKey(model, apiKey) {
+export async function verifyKey(model, apiKey, baseUrl, modelName) {
     try {
         if (model === 'openai') {
             const openai = new OpenAI({ apiKey });
@@ -141,6 +172,22 @@ export async function verifyKey(model, apiKey) {
             const genAI = new GoogleGenerativeAI(apiKey);
             const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
             await geminiModel.generateContent('hi');
+            return true;
+        }
+        else if (model === 'openai-compatible') {
+            const openai = new OpenAI({
+                apiKey: apiKey || 'none',
+                baseURL: baseUrl || 'http://localhost:1234/v1'
+            });
+            await openai.models.list();
+            return true;
+        }
+        else if (model === 'local') {
+            const openai = new OpenAI({
+                apiKey: 'ollama',
+                baseURL: baseUrl || 'http://localhost:11434/v1'
+            });
+            await openai.models.list();
             return true;
         }
     }

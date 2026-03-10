@@ -18,4 +18,4 @@ export declare function generateContent(profile: ProfileConfig, filename: string
     content: string;
     error?: string;
 }>;
-export declare function verifyKey(model: 'openai' | 'anthropic' | 'gemini', apiKey: string): Promise<boolean>;
+export declare function verifyKey(model: 'openai' | 'anthropic' | 'gemini' | 'openai-compatible' | 'local', apiKey: string, baseUrl?: string, modelName?: string): Promise<boolean>;
