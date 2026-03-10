@@ -1,13 +1,14 @@
 {
-  "name": ".",
+  "name": "mkagent-monorepo",
   "version": "1.0.0",
   "description": "ai mk agent project",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "start": "turbo start",
+    "lint": "turbo lint"
   },
   "dependencies": {
     "next": "^14.1.0",
@@ -15,5 +16,8 @@
     "react-dom": "^18.2.0",
     "lucide-react": "^0.344.0",
     "framer-motion": "^11.0.8"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.2"
   }
 }
