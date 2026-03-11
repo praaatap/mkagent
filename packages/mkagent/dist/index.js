@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
 import { getActiveProfile, maskKey, listProfiles, getProfile } from './core/config.js';
-import { runConfigPrompt, runInitPrompt } from './core/prompts.js';
+import { runConfigPrompt, runInitPrompt, runLocalGeneratePrompt } from './core/prompts.js';
 import { orchestrateGeneration } from './core/generate.js';
 import { generateContent, verifyKey } from './core/ai.js';
 import { detectStack } from './core/detect.js';
@@ -315,5 +315,26 @@ program
 });
 program.parse(process.argv);
 if (!process.argv.slice(2).length) {
-    program.outputHelp();
+    (async () => {
+        showIntro('generate');
+        let profile = await getActiveProfile();
+        if (!profile || !profile.keys[profile.defaultModel]) {
+            console.log(chalk.yellow('No valid configuration found. Let\'s set it up first.'));
+            await runConfigPrompt();
+            profile = await getActiveProfile();
+        }
+        if (!profile)
+            return cancel('Configuration missing. Aborting.');
+        const projectOptions = await runLocalGeneratePrompt();
+        if (!projectOptions)
+            return;
+        const targetDir = process.cwd();
+        const intelligence = await detectStack();
+        await orchestrateGeneration(targetDir, projectOptions, intelligence, false // Not dry run
+        );
+        outro(chalk.green('Agent files generated successfully in current directory!'));
+    })().catch((err) => {
+        console.error(chalk.red(err.message));
+        process.exit(1);
+    });
 }

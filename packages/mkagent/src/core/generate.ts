@@ -60,7 +60,7 @@ export async function orchestrateGeneration(
 
         spinner.succeed(chalk.green('Markdown files generated successfully.'));
 
-        if (!dryRun) {
+        if (!dryRun && options.template !== 'none') {
             spinner.start('Scaffolding folder structure...');
             await scaffoldProject(targetFolder, options);
             spinner.succeed(chalk.green('Project structure scaffolded successfully.'));

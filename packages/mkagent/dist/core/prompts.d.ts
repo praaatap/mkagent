@@ -16,3 +16,4 @@ export interface ProjectOptions {
     template?: 'saas' | 'api' | 'dashboard' | 'landing' | 'ecommerce' | 'none';
 }
 export declare function runInitPrompt(): Promise<ProjectOptions | void>;
+export declare function runLocalGeneratePrompt(): Promise<ProjectOptions | void>;

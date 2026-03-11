@@ -286,3 +286,64 @@ export async function runInitPrompt(): Promise<ProjectOptions | void> {
         template: template as any
     };
 }
+
+export async function runLocalGeneratePrompt(): Promise<ProjectOptions | void> {
+    const description = await text({
+        message: 'Short description of this project? (It helps the AI generate accurate rules)',
+        placeholder: 'A web app for tracking fitness goals'
+    });
+    if (isCancel(description)) return cancel('Operation cancelled');
+
+    const technicalLevel = await select({
+        message: 'Agent Technical Level?',
+        options: [
+            { value: 'Senior', label: 'Senior Engineer' },
+            { value: 'Expert', label: 'Expert Developer' },
+            { value: 'Architect', label: 'System Architect' }
+        ],
+        initialValue: 'Expert'
+    });
+    if (isCancel(technicalLevel)) return cancel('Operation cancelled');
+
+    const focusArea = await select({
+        message: 'Agent Focus Area?',
+        options: [
+            { value: 'Fullstack', label: 'Balanced Fullstack' },
+            { value: 'Performance', label: 'High Performance' },
+            { value: 'Security', label: 'Security & Hardening' },
+            { value: 'Testing', label: 'Test-Driven Development' }
+        ],
+        initialValue: 'Fullstack'
+    });
+    if (isCancel(focusArea)) return cancel('Operation cancelled');
+
+    const agents = await multiselect({
+        message: 'Which agent files to generate in the current directory?',
+        options: [
+            { value: 'AGENTS.md', label: 'AGENTS.md (Coordination)' },
+            { value: 'CLAUDE.md', label: 'CLAUDE.md (Dev Rules)' },
+            { value: 'MEMORY.md', label: 'MEMORY.md (Context)' },
+            { value: 'GEMINI.md', label: 'GEMINI.md (Google AI)' },
+            { value: '.cursorrules', label: '.cursorrules (Cursor IDE)' },
+            { value: 'COPILOT.md', label: 'COPILOT.md (Github Copilot)' },
+            { value: '.windsurfrules', label: '.windsurfrules (Windsurf)' },
+            { value: 'CONTRIBUTING.md', label: 'CONTRIBUTING.md (AI Guide)' },
+            { value: 'ARCHITECTURE.md', label: 'ARCHITECTURE.md (System Doc)' }
+        ],
+        initialValues: ['AGENTS.md', 'CLAUDE.md', 'MEMORY.md', '.cursorrules']
+    });
+    if (isCancel(agents)) return cancel('Operation cancelled');
+
+    return {
+        folderName: '', // Root dir
+        projectType: 'Detected', // Will be filled dynamically by intelligence
+        description: description as string,
+        commands: 'npm run dev', // Default placeholder
+        forbidden: 'dist, .env, node_modules, .git',
+        agents: agents as string[],
+        technicalLevel: technicalLevel as any,
+        focusArea: focusArea as any,
+        template: 'none'
+    };
+}
+
