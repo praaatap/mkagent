@@ -16,11 +16,16 @@ export async function orchestrateGeneration(
     targetFolder: string,
     options: ProjectOptions,
     intelligence: ProjectIntelligence,
-    dryRun: boolean = false
+    dryRun: boolean = false,
+    modelOverride?: string
 ) {
     const profile = await getActiveProfile();
     if (!profile) {
         throw new Error('No active profile found. Run `mkagent config` first.');
+    }
+
+    if (modelOverride) {
+        profile.defaultModel = modelOverride as any;
     }
 
     const { folderName, projectType, description, agents } = options;

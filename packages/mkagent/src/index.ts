@@ -54,6 +54,7 @@ program
                 console.log(`  OpenAI Key:    ${maskKey(profile.keys?.openai)}`);
                 console.log(`  Anthropic Key: ${maskKey(profile.keys?.anthropic)}`);
                 console.log(`  Gemini Key:    ${maskKey(profile.keys?.gemini)}`);
+                console.log(`  Groq Key:      ${maskKey(profile.keys?.groq)}`);
                 if (profile.githubToken) console.log(`  GitHub Token:  ${maskKey(profile.githubToken)}`);
             }
             const profiles = await listProfiles();
@@ -72,6 +73,7 @@ program
     .command('init')
     .description('Initialize a new project with AI scaffolding')
     .option('--dry-run', 'Preview without writing files')
+    .option('--model <type>', 'Override default AI model (openai, anthropic, gemini, groq, local)')
     .action(async (options) => {
         showIntro('init');
 
@@ -103,7 +105,8 @@ program
             targetDir,
             projectOptions,
             intelligence,
-            options.dryRun
+            options.dryRun,
+            options.model
         );
 
         outro(chalk.green(`Project ${projectOptions.folderName} scaffolded successfully!`));
@@ -176,6 +179,7 @@ program
     .command('regenerate')
     .description('Re-generate agent .md files in current folder')
     .option('--dry-run', 'Preview without writing files')
+    .option('--model <type>', 'Override default AI model')
     .action(async (options) => {
         showIntro('regenerate');
 
@@ -205,6 +209,8 @@ program
         if (agentsToGen.length === 0) {
             return cancel('No existing agent files found.');
         }
+
+        if (options.model) profile.defaultModel = options.model;
 
         const spinner = ora(`⚡ Regenerating agents...`).start();
         for (const file of agentsToGen) {
@@ -363,7 +369,8 @@ if (!process.argv.slice(2).length) {
             targetDir,
             projectOptions,
             intelligence,
-            false // Not dry run
+            false, // Not dry run
+            process.argv.includes('--model') ? process.argv[process.argv.indexOf('--model') + 1] : undefined
         );
         outro(chalk.green('Agent files generated successfully in current directory!'));
     })().catch((err) => {

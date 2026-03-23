@@ -7,7 +7,7 @@ export interface ModelParams {
     maxTokens?: number;
 }
 
-export type ModelType = 'openai' | 'anthropic' | 'gemini' | 'openai-compatible' | 'local';
+export type ModelType = 'openai' | 'anthropic' | 'gemini' | 'groq' | 'openai-compatible' | 'local';
 
 export interface ProfileConfig {
     defaultModel: ModelType;
@@ -15,6 +15,7 @@ export interface ProfileConfig {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        groq?: string;
         'openai-compatible'?: string;
         local?: string;
     };
@@ -22,6 +23,7 @@ export interface ProfileConfig {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        groq?: string;
         'openai-compatible'?: string;
         local?: string;
     };
@@ -29,6 +31,7 @@ export interface ProfileConfig {
         openai?: ModelParams;
         anthropic?: ModelParams;
         gemini?: ModelParams;
+        groq?: ModelParams;
         'openai-compatible'?: ModelParams;
         local?: ModelParams;
     };

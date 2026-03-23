@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import {
     BookOpen,
     Terminal,
@@ -37,23 +38,28 @@ const Sidebar: React.FC = () => {
     ]
 
     return (
-        <aside className="w-56 border-r border-white/[0.04] h-[calc(100vh-4rem)] overflow-y-auto sticky top-16 py-6 px-4 hidden lg:block">
-            <nav className="space-y-6">
-                {sections.map((section) => (
-                    <div key={section.title}>
-                        <h4 className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/15 mb-3 px-3">
+        <aside className="w-64 border-r border-border-subtle h-[calc(100vh-4rem)] overflow-y-auto sticky top-16 py-8 px-6 hidden lg:block bg-bg-void">
+            <nav className="space-y-8">
+                {sections.map((section, sectionIdx) => (
+                    <motion.div 
+                        key={section.title}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: sectionIdx * 0.1 }}
+                    >
+                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold text-text-dim mb-4 px-2">
                             {section.title}
                         </h4>
-                        <div className="space-y-0.5">
-                            {section.items.map((item) => (
+                        <div className="space-y-1">
+                            {section.items.map((item, itemIdx) => (
                                 <NavLink
                                     key={item.name}
                                     to={item.path}
                                     end={item.path === '/docs'}
                                     className={({ isActive }) =>
-                                        `flex items-center gap-2.5 px-3 py-2 text-[12px] rounded-lg no-underline transition-all ${isActive
-                                            ? "bg-accent-cyan/8 text-accent-cyan font-semibold"
-                                            : "text-white/30 hover:text-white/60 hover:bg-white/[0.03]"
+                                        `flex items-center gap-3 px-3 py-2 text-[12px] rounded-md no-underline transition-all duration-200 font-medium ${isActive
+                                            ? "bg-white text-black font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                                            : "text-text-dim hover:text-text-ghost hover:bg-white/5"
                                         }`
                                     }
                                 >
@@ -62,7 +68,7 @@ const Sidebar: React.FC = () => {
                                 </NavLink>
                             ))}
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
             </nav>
         </aside>

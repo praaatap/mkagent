@@ -18,25 +18,31 @@ Standard LLMs often lack context about your specific stack, directory structure,
 
 ## 🚀 Quick Start
 
-### 1. Installation
-Install globally via NPM to use the `mkagent` command anywhere:
+### 1. Instant Execution (No Install)
+Run `mkagent` directly in any project folder without installing:
+```bash
+npx mkagent
+```
+*This will trigger the local generation flow, creating AI rule files directly in your current directory.*
+
+### 2. Installation
+Or install globally to use it as a permanent tool:
 ```bash
 npm install -g mkagent
 ```
 
-### 2. Configuration
-Connect your preferred AI model. Supports cloud APIs and local endpoints:
+### 3. Configuration & Initialization
 ```bash
-mkagent config
+mkagent config  # Link your AI models
+mkagent init    # Bootstrap a new project scaffold
 ```
-*Follow the interactive prompts to link OpenAI, Anthropic, Google Gemini, or a Local Ollama instance.*
 
-### 3. Initialize
-Bootstrap your project's intelligence layer:
-```bash
-mkagent init
-```
-*This generates high-fidelity rules like `CLAUDE.md`, `GEMINI.md`, and `.cursorrules` tailored to your code.*
+---
+
+## ✨ New in v1.1.0
+- **Visual Dashboards**: Stunning ASCII graphs and tables in your CLI for project intelligence.
+- **Zero-Install Generation**: Run `npx mkagent` anywhere for instant rule generation.
+- **Improved Terminal**: A high-fidelity interactive terminal playground in our documentation.
 
 ---
 

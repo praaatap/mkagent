@@ -46,6 +46,7 @@ export async function runConfigPrompt() {
             { value: 'openai', label: 'OpenAI (GPT-4o)' },
             { value: 'anthropic', label: 'Anthropic (Claude)' },
             { value: 'gemini', label: 'Google (Gemini)' },
+            { value: 'groq', label: 'Groq (Llama 3)' },
             { value: 'openai-compatible', label: 'OpenAI-Compatible (LM Studio, vLLM, etc.)' },
             { value: 'local', label: 'Local (Ollama)' }
         ],
@@ -55,29 +56,38 @@ export async function runConfigPrompt() {
 
     const isLocal = defaultModel === 'local';
     const isCompatible = defaultModel === 'openai-compatible';
+    const isCloud = ['openai', 'anthropic', 'gemini', 'groq'].includes(defaultModel as string);
 
-    // For local/compatible models, prompt for endpoint and model name
-    if (isLocal || isCompatible) {
-        const defaultUrl = isLocal ? 'http://localhost:11434/v1' : 'http://localhost:1234/v1';
-        const baseUrl = await text({
-            message: `Enter ${isLocal ? 'Ollama' : 'API'} endpoint URL:`,
-            placeholder: defaultUrl,
-            defaultValue: defaultUrl
-        });
-        if (isCancel(baseUrl)) return cancel('Operation cancelled');
-        pConfig.baseUrl = baseUrl as string;
+    // Prompt for model name if requested or for local/compatible
+    if (isLocal || isCompatible || isCloud) {
+        let defaultModelName = 'default';
+        if (isLocal) defaultModelName = 'llama3.2';
+        if (defaultModel === 'openai') defaultModelName = 'gpt-4o';
+        if (defaultModel === 'anthropic') defaultModelName = 'claude-3-5-sonnet-20241022';
+        if (defaultModel === 'gemini') defaultModelName = 'gemini-1.5-flash';
+        if (defaultModel === 'groq') defaultModelName = 'llama-3.3-70b-versatile';
 
-        const defaultModelName = isLocal ? 'llama3.2' : 'default';
         const modelName = await text({
-            message: 'Enter model name:',
+            message: `Enter model name (leave default for ${defaultModelName}):`,
             placeholder: defaultModelName,
             defaultValue: defaultModelName
         });
         if (isCancel(modelName)) return cancel('Operation cancelled');
         pConfig.modelName = modelName as string;
 
-        if (isLocal) {
-            pConfig.keys[pConfig.defaultModel as keyof typeof pConfig.keys] = 'ollama';
+        if (isLocal || isCompatible) {
+            const defaultUrl = isLocal ? 'http://localhost:11434/v1' : 'http://localhost:1234/v1';
+            const baseUrl = await text({
+                message: `Enter ${isLocal ? 'Ollama' : 'API'} endpoint URL:`,
+                placeholder: defaultUrl,
+                defaultValue: defaultUrl
+            });
+            if (isCancel(baseUrl)) return cancel('Operation cancelled');
+            pConfig.baseUrl = baseUrl as string;
+
+            if (isLocal) {
+                pConfig.keys[pConfig.defaultModel as keyof typeof pConfig.keys] = 'ollama';
+            }
         }
     }
 

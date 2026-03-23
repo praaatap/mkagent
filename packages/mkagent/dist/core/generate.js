@@ -5,10 +5,13 @@ import chalk from 'chalk';
 import { generateContent } from './ai.js';
 import { scaffoldProject } from './scaffold.js';
 import { getActiveProfile } from './config.js';
-export async function orchestrateGeneration(targetFolder, options, intelligence, dryRun = false) {
+export async function orchestrateGeneration(targetFolder, options, intelligence, dryRun = false, modelOverride) {
     const profile = await getActiveProfile();
     if (!profile) {
         throw new Error('No active profile found. Run `mkagent config` first.');
+    }
+    if (modelOverride) {
+        profile.defaultModel = modelOverride;
     }
     const { folderName, projectType, description, agents } = options;
     const context = { ...options, intelligence };

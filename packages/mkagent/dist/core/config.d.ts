@@ -2,13 +2,14 @@ export interface ModelParams {
     temperature?: number;
     maxTokens?: number;
 }
-export type ModelType = 'openai' | 'anthropic' | 'gemini' | 'openai-compatible' | 'local';
+export type ModelType = 'openai' | 'anthropic' | 'gemini' | 'groq' | 'openai-compatible' | 'local';
 export interface ProfileConfig {
     defaultModel: ModelType;
     keys: {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        groq?: string;
         'openai-compatible'?: string;
         local?: string;
     };
@@ -16,6 +17,7 @@ export interface ProfileConfig {
         openai?: string;
         anthropic?: string;
         gemini?: string;
+        groq?: string;
         'openai-compatible'?: string;
         local?: string;
     };
@@ -23,6 +25,7 @@ export interface ProfileConfig {
         openai?: ModelParams;
         anthropic?: ModelParams;
         gemini?: ModelParams;
+        groq?: ModelParams;
         'openai-compatible'?: ModelParams;
         local?: ModelParams;
     };

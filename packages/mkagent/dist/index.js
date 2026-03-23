@@ -49,6 +49,7 @@ program
             console.log(`  OpenAI Key:    ${maskKey(profile.keys?.openai)}`);
             console.log(`  Anthropic Key: ${maskKey(profile.keys?.anthropic)}`);
             console.log(`  Gemini Key:    ${maskKey(profile.keys?.gemini)}`);
+            console.log(`  Groq Key:      ${maskKey(profile.keys?.groq)}`);
             if (profile.githubToken)
                 console.log(`  GitHub Token:  ${maskKey(profile.githubToken)}`);
         }
@@ -66,6 +67,7 @@ program
     .command('init')
     .description('Initialize a new project with AI scaffolding')
     .option('--dry-run', 'Preview without writing files')
+    .option('--model <type>', 'Override default AI model (openai, anthropic, gemini, groq, local)')
     .action(async (options) => {
     showIntro('init');
     let profile = await getActiveProfile();
@@ -89,7 +91,7 @@ program
             return cancel('Operation cancelled.');
     }
     const intelligence = await detectStack();
-    await orchestrateGeneration(targetDir, projectOptions, intelligence, options.dryRun);
+    await orchestrateGeneration(targetDir, projectOptions, intelligence, options.dryRun, options.model);
     outro(chalk.green(`Project ${projectOptions.folderName} scaffolded successfully!`));
 });
 program
@@ -157,6 +159,7 @@ program
     .command('regenerate')
     .description('Re-generate agent .md files in current folder')
     .option('--dry-run', 'Preview without writing files')
+    .option('--model <type>', 'Override default AI model')
     .action(async (options) => {
     showIntro('regenerate');
     const profile = await getActiveProfile();
@@ -182,6 +185,8 @@ program
     if (agentsToGen.length === 0) {
         return cancel('No existing agent files found.');
     }
+    if (options.model)
+        profile.defaultModel = options.model;
     const spinner = ora(`⚡ Regenerating agents...`).start();
     for (const file of agentsToGen) {
         const filePath = path.join(process.cwd(), file);
@@ -330,8 +335,8 @@ if (!process.argv.slice(2).length) {
             return;
         const targetDir = process.cwd();
         const intelligence = await detectStack();
-        await orchestrateGeneration(targetDir, projectOptions, intelligence, false // Not dry run
-        );
+        await orchestrateGeneration(targetDir, projectOptions, intelligence, false, // Not dry run
+        process.argv.includes('--model') ? process.argv[process.argv.indexOf('--model') + 1] : undefined);
         outro(chalk.green('Agent files generated successfully in current directory!'));
     })().catch((err) => {
         console.error(chalk.red(err.message));

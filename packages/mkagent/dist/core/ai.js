@@ -71,7 +71,7 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
             const openai = new OpenAI({ apiKey });
             const completion = await openai.chat.completions.create({
                 messages: [{ role: 'system', content: prompt }],
-                model: 'gpt-4o',
+                model: profile.modelName || 'gpt-4o',
                 temperature: params.temperature ?? 0.7,
                 max_tokens: params.maxTokens ?? 2000
             });
@@ -80,7 +80,7 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
         else if (model === 'anthropic') {
             const anthropic = new Anthropic({ apiKey });
             const msg = await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
+                model: profile.modelName || 'claude-3-5-sonnet-20241022',
                 max_tokens: params.maxTokens ?? 2000,
                 temperature: params.temperature ?? 0.7,
                 messages: [{ role: 'user', content: prompt }]
@@ -90,7 +90,7 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
         else if (model === 'gemini') {
             const genAI = new GoogleGenerativeAI(apiKey);
             const geminiModel = genAI.getGenerativeModel({
-                model: 'gemini-2.0-flash',
+                model: profile.modelName || 'gemini-2.5-flash',
                 generationConfig: {
                     temperature: params.temperature ?? 0.7,
                     maxOutputTokens: params.maxTokens ?? 2048
@@ -99,6 +99,19 @@ Output ONLY the raw content. Do not include markdown code block backticks unless
             const result = await geminiModel.generateContent(prompt);
             const response = await result.response;
             return response.text();
+        }
+        else if (model === 'groq') {
+            const groq = new OpenAI({
+                apiKey,
+                baseURL: 'https://api.groq.com/openai/v1'
+            });
+            const completion = await groq.chat.completions.create({
+                messages: [{ role: 'system', content: prompt }],
+                model: profile.modelName || 'llama-3.3-70b-versatile',
+                temperature: params.temperature ?? 0.7,
+                max_tokens: params.maxTokens ?? 2000
+            });
+            return completion.choices[0].message.content || '';
         }
         else if (model === 'openai-compatible') {
             const openai = new OpenAI({
@@ -162,7 +175,7 @@ export async function verifyKey(model, apiKey, baseUrl, modelName) {
         else if (model === 'anthropic') {
             const anthropic = new Anthropic({ apiKey });
             await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
+                model: modelName || 'claude-3-5-sonnet-20241022',
                 max_tokens: 1,
                 messages: [{ role: 'user', content: 'hi' }]
             });
@@ -170,8 +183,20 @@ export async function verifyKey(model, apiKey, baseUrl, modelName) {
         }
         else if (model === 'gemini') {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            const geminiModel = genAI.getGenerativeModel({ model: modelName || 'gemini-1.5-flash' });
             await geminiModel.generateContent('hi');
+            return true;
+        }
+        else if (model === 'groq') {
+            const groq = new OpenAI({
+                apiKey,
+                baseURL: 'https://api.groq.com/openai/v1'
+            });
+            await groq.chat.completions.create({
+                messages: [{ role: 'user', content: 'hi' }],
+                model: modelName || 'llama-3.3-70b-versatile',
+                max_tokens: 1
+            });
             return true;
         }
         else if (model === 'openai-compatible') {
